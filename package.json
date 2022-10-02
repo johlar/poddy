@@ -1,0 +1,23 @@
+{
+  "name": "poddy",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "esbuild": "^0.15.10",
+    "pkg": "^5.8.0"
+  },
+  "dependencies": {
+    "axios": "^0.27.2",
+    "commander": "^9.4.1",
+    "xml-js": "^1.6.11"
+  },
+  "bin": {
+    "poddy": "./build/poddy"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "build": "esbuild src/index.js --outfile=./build/index.js --bundle --platform=node --target=node16",
+    "package": "pkg build/index.js --output build/poddy"
+  }
+}
