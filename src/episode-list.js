@@ -31,7 +31,7 @@ const getEpisodeList = async (feedUrl) => {
             return {
                 title: feedItem.title._cdata ?? feedItem.title?._text,
                 pubDate: new Date(Date.parse(feedItem.pubDate._text)).toISOString(),
-                guid: feedItem.titleguid?._cdata ?? feedItem.guid._text,
+                guid: feedItem.guid?._cdata ?? feedItem.guid._text,
                 duration: feedItem['itunes:duration']?._text,
                 size: `${sizeMb} MB`,
                 url: feedItem.enclosure._attributes.url,
