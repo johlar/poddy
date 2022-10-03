@@ -4,6 +4,7 @@ const searchPodcasts = require("./podcast-search");
 const downloadEpisodes = require("./episode-download");
 const getEpisodeList = require("./episode-list");
 const fs = require('fs');
+const path = require("path");
 
 const parseEpisodeRange = (input) => {
     // note: index 1 based to make sense for episode numbers
@@ -36,6 +37,9 @@ const parseEpisodeRange = (input) => {
 }
 
 const parseDirectory = (directory) => {
+    if (directory.startsWith('~')) {
+        directory = path.join(process.env.HOME, directory.slice(1));
+    }
     if (!fs.existsSync(directory)) {
         throw new InvalidArgumentError(`Directory '${directory}' does not exist`);
     }

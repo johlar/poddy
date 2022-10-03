@@ -12,6 +12,7 @@ Let me know if you encounter any issues and feel free to open an issue or submit
 - [Examples](#examples)
 - [Limitations](#limitations)
 - [Uninstalling](#uninstalling)
+- [Development](#development)
 
 ## Features
 
@@ -27,7 +28,7 @@ Let me know if you encounter any issues and feel free to open an issue or submit
 
 2. Install, build and package the application
 
-`cd poddy && npm install && npm run build && npm run package`
+`cd poddy && npm install && npm package`
 
 3. Make it available in your shell
 
@@ -55,9 +56,12 @@ Let me know if you encounter any issues and feel free to open an issue or submit
 
 - Output formatting is very basic
 - Does not include show metadata / shownotes
-- Does not support relative paths in download directories
 - Only supports iTunes as a search provider for finding feed URLs
 
 ## Uninstalling
 
 Removing Poddy is super simple. Just delete the downloaded repository and then remove the symlink by running: `npm r poddy -g`
+
+## Development
+
+When passing arguments in local development, don't forget the separator (e.g. `npm run start -- <args>`).
