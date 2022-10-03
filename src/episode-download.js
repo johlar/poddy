@@ -1,5 +1,6 @@
 const axios = require('axios');
 const fs = require("fs");
+const fsAsync = require("fs/promises");
 const path = require("path");
 
 const printProgress = (chunk, downloaded, total) => {
@@ -21,12 +22,34 @@ const fileNameFrom = (episode) => {
     return name;
 }
 
+const getOrInitMetadata = async (directory) => {
+    const metadataPath = path.resolve(directory, "poddy.meta");
+    if (!fs.existsSync(metadataPath)) {
+        fs.writeFileSync(metadataPath, JSON.stringify({ episodes: [] }))
+    }
+    return JSON.parse(fs.readFileSync(metadataPath).toString());
+}
+
+const persistMetadata = async (metadata, directory) => {
+    const metadataPath = path.resolve(directory, "poddy.meta");
+    return fsAsync.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
+}
+
+const isDownloaded = (episode, metadata) => {
+    return metadata.episodes.map(e => e.guid).includes(episode.guid)
+}
+
+const markAsDownloaded = (episode, metadata) => {
+    metadata.episodes.push({ guid: episode.guid, title: episode.title })
+    return metadata;
+}
+
 const downloadEpisode = (episode, directory) => {
     return new Promise(async (resolve, reject) => {
         const fileName = fileNameFrom(episode);
         const fullPath = path.resolve(directory, fileName);
         if (fs.existsSync(fullPath)) {
-            console.log(`Skipping episode '${episode.title}' because '${fileName}' already exists`);
+            console.log(`Skipping episode '${episode.title}' because of clashing file name: '${fileName}' already exists`);
             return resolve();
         }
 
@@ -67,9 +90,19 @@ const downloadEpisode = (episode, directory) => {
     });
 
 }
+
 const downloadEpisodes = async (episodes, directory) => {
+    let metadata = await getOrInitMetadata(directory);
+
     for (let i = 0; i < episodes.length; i++) {
-        await downloadEpisode(episodes[i], directory)
+        const episode = episodes[i];
+        if (isDownloaded(episode, metadata)) {
+            console.log(`Skipping episode '${episode.title}' because it was already downloaded.`);
+        } else {
+            await downloadEpisode(episode, directory)
+            metadata = markAsDownloaded(episode, metadata)
+            await persistMetadata(metadata, directory);
+        }
     }
 }
 
