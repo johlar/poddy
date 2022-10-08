@@ -30,13 +30,15 @@ const getEpisodeList = async (feedUrl) => {
             const episodeNo = parseInt(feedItem['itunes:episode']?._text, 10);
             return {
                 title: feedItem.title._cdata ?? feedItem.title?._text,
-                pubDate: new Date(Date.parse(feedItem.pubDate._text)).toISOString(),
+                pubDate: new Date(Date.parse(feedItem.pubDate._text)),
                 guid: feedItem.guid?._cdata ?? feedItem.guid._text,
                 duration: feedItem['itunes:duration']?._text,
                 size: `${sizeMb} MB`,
                 url: feedItem.enclosure._attributes.url,
                 episodeNo: !isNaN(episodeNo) ? episodeNo : undefined,
-                description: description.replace(/<[^>]+>/g, '') // remove html tags
+                description,
+                imageUrl: feedItem['itunes:image']?._attributes.href,
+                raw: JSON.stringify(feedItem, null, 2)
             }
         });
     return sorted(episodes);

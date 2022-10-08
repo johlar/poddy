@@ -1,4 +1,4 @@
-# Poddy - The CLI Podcast Downloader
+# Poddy - CLI Podcast Downloader
 
 This command line tool downloads podcast episodes from an RSS feed.
 
@@ -16,7 +16,8 @@ Let me know if you encounter any issues and feel free to open an issue or submit
 
 ## Features
 
-- Download episodes from a feed URL (earliest, latest, range, all) 
+- Download episodes from a feed URL with flexible selections: earliest, latest, range, or all episodes
+- Download future-safe shownotes that are not susceptible to dead links. They are formatted as HTML but also contain the raw episode data for completeness.
 - Search and find the feed URL from a show name
 - List episodes from a feed URL
 
@@ -40,22 +41,38 @@ Let me know if you encounter any issues and feel free to open an issue or submit
 
 ## Examples
 
-* Show all available commands: `poddy --help`
+Show all available commands:
 
-* Find a feed to download from: `poddy search --name "Self-Hosted"`
+`poddy --help`
 
-* Download all episodes from a feed: `poddy download --url "https://feeds.fireside.fm/selfhosted/rss" --directory "/Users/me/podcasts"`
+Find a feed to download from:
 
-* Download 5 latest episodes from a feed `poddy download --url "https://feeds.fireside.fm/selfhosted/rss" --directory "./podcasts" --episodes -5`
+`poddy search --name "Self-Hosted"`
 
-* Download first episode from a feed: `poddy download --url "https://feeds.fireside.fm/selfhosted/rss" --directory "/Users/me/podcasts" --episodes 1`
+Download all episodes from a feed:
 
-* Download a range of episodes from a feed: `poddy download --url "https://feeds.fireside.fm/selfhosted/rss" --directory "/Users/me/podcasts" --episodes 10-15`
+`poddy download --url "https://feeds.fireside.fm/selfhosted/rss" --directory "~/podcasts"`
+
+Download all episodes from a feed including shownotes:
+
+`poddy download --url "https://feeds.fireside.fm/selfhosted/rss" --directory "~/podcasts" --shownotes`
+
+Download 5 latest episodes from a feed
+
+`poddy download --url "https://feeds.fireside.fm/selfhosted/rss" --directory "~/podcasts" --episodes -5`
+
+Download first episode from a feed:
+
+`poddy download --url "https://feeds.fireside.fm/selfhosted/rss" --directory "~/podcasts" --episodes 1`
+
+
+Download a range of episodes from a feed:
+
+`poddy download --url "https://feeds.fireside.fm/selfhosted/rss" --directory "~/podcasts" --episodes 10-15`
 
 ## Limitations
 
 - Output formatting is very basic
-- Does not include show metadata / shownotes
 - Only supports iTunes as a search provider for finding feed URLs
 
 ## Uninstalling
@@ -64,4 +81,4 @@ Removing Poddy is super simple. Just delete the downloaded repository and then r
 
 ## Development
 
-When passing arguments in local development, don't forget the separator (e.g. `npm run start -- <args>`).
+When passing arguments in local development, don't forget the separator (e.g. `npm run start -- search --name "some podcast"`).

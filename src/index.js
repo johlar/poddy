@@ -16,7 +16,7 @@ const parseEpisodeRange = (input) => {
         const start = parseInt(parts[0], 10);
         const end = parseInt(parts[1], 10);
 
-        if (isNaN(start) || isNaN(end) || start <= 0 || end <= 0 || start >= end || start == end) {
+        if (isNaN(start) || isNaN(end) || start <= 0 || end < start) {
             throw new InvalidArgumentError(ERR_MSG);
         }
         return { from: start, to: end };
@@ -31,9 +31,8 @@ const parseEpisodeRange = (input) => {
             // like '-20', i.e. take 20 latest
             return { from: integer, to: undefined };
         }
-    } else {
-        throw new InvalidArgumentError(ERR_MSG);
     }
+    throw new InvalidArgumentError(ERR_MSG);
 }
 
 const parseDirectory = (directory) => {
@@ -81,6 +80,7 @@ program.command('download')
     .requiredOption('-u, --url <url>', 'url to podcast feed')
     .requiredOption('-d, --directory <directory>', 'destination of downloads', parseDirectory)
     .option('-e, --episodes <number|range>', 'podcasts to download', parseEpisodeRange)
+    .option('-s, --shownotes', 'should include shownotes')
     .action(async (options) => {
         // make episodes chronological order (lowest = oldest)
         const episodes = (await getEpisodeList(options.url)).reverse();
@@ -92,7 +92,7 @@ program.command('download')
             const isTakeLatest = options.episodes.to == undefined;
 
             const firstEpisodeNbr = isTakeLatest
-                ? episodes.length + options.episodes.from // from is negative
+                ? episodes.length + 1 + options.episodes.from // from is negative
                 : options.episodes.from;
             const lastEpisodeNbr = isTakeLatest
                 ? episodes.length
@@ -103,7 +103,7 @@ program.command('download')
         }
 
         console.log(`Downloading ${toDownload.length} episodes..`);
-        await downloadEpisodes(toDownload, options.directory);
+        await downloadEpisodes(toDownload, options.directory, options.shownotes);
     });
 
 program.parse();
