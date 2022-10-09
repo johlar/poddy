@@ -1,11 +1,12 @@
-const fs = require("fs");
-const fsAsync = require("fs/promises");
-const he = require('he');
-const axios = require("axios");
+import { Episode } from "./episode-list";
+import * as fs from "fs";
+import * as fsAsync from "fs/promises";
+import * as he from 'he';
+import axios from "axios";
 const version = require('../package.json').version;
 
-let cache = {};
-const base64Data = async (imageUrl) => {
+let cache: { [key: string]: any } = {};
+const base64Data = async (imageUrl: string): Promise<string> => {
     if (cache[imageUrl]) {
         return cache[imageUrl];
     }
@@ -22,20 +23,20 @@ const base64Data = async (imageUrl) => {
 
             return base64;
         }
-    } catch (err) {
+    } catch (err: any) {
         console.error(`Failed to fetch image: ${imageUrl}`, err.message);
     }
-    return null;
+    return "";
 }
 
-const createHtml = async (episode) => {
-    const propertyHtml = (property, svgUrl) => {
+const createHtml = async (episode: Episode): Promise<string> => {
+    const propertyHtml = (property: any, svgUrl: string) => {
         if (!property) { return ""; }
         return `<span class="d-inline-block"><object class="px-2" data="${svgUrl}" type="image/svg+xml"></object>${he.encode(property)}</span>`
     }
     // download image to be immune to dying links
     const image = await base64Data(episode.imageUrl);
-    
+
     return `
         <!doctype html>
             <html lang="en">
@@ -50,7 +51,7 @@ const createHtml = async (episode) => {
                 <div class="container">
                     <div class="row justify-content-md-center py-4">
                         <div class="col-auto pb-2">
-                            ${image == null ? "" : `<img alt="${episode.title}" src="${image}" height="100" class="rounded"></img>`}
+                            ${image == "" ? "" : `<img alt="${episode.title}" src="${image}" height="100" class="rounded"></img>`}
                         </div>
                         <div class="col-auto">
                             <h1>${he.encode(episode.title)}</h1>
@@ -93,7 +94,7 @@ const createHtml = async (episode) => {
         </html>`
 }
 
-const saveShownotes = async (episode, fullPath) => {
+const saveShownotes = async (episode: Episode, fullPath: string): Promise<void> => {
     if (fs.existsSync(fullPath)) {
         console.log(`Skipping shownotes because file already exist at ${fullPath}`);
         return Promise.reject();
@@ -101,4 +102,4 @@ const saveShownotes = async (episode, fullPath) => {
     return await fsAsync.writeFile(fullPath, await createHtml(episode));
 }
 
-module.exports = saveShownotes;
+export default saveShownotes;

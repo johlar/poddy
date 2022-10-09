@@ -1,16 +1,14 @@
-const { Command, InvalidArgumentError } = require('commander');
-const program = new Command();
-const searchPodcasts = require("./podcast-search");
-const downloadEpisodes = require("./episode-download");
-const getEpisodeList = require("./episode-list");
-const fs = require('fs');
-const path = require("path");
+import { Command, InvalidArgumentError } from 'commander';
+import { searchPodcasts, PodcastSearchResult } from "./podcast-search";
+import downloadEpisodes from "./episode-download";
+import { getEpisodeList, Episode } from "./episode-list";
+import * as fs from 'fs';
+import * as path from "path";
 
-const parseEpisodeRange = (input) => {
+const parseEpisodeRange = (input: string): { from: number, to?: number } => {
     // note: index 1 based to make sense for episode numbers
     const ERR_MSG = "Expected episode number (e.g. '42'), range (e.g. '1-100' or '-10')";
     const parts = input.startsWith("-") ? [input] : input.split("-")
-
     if (parts.length == 2) {
         // like '2-10', i.e. to take eps 2 to 5
         const start = parseInt(parts[0], 10);
@@ -35,15 +33,17 @@ const parseEpisodeRange = (input) => {
     throw new InvalidArgumentError(ERR_MSG);
 }
 
-const parseDirectory = (directory) => {
+const parseDirectory = (directory: string): string => {
     if (directory.startsWith('~')) {
-        directory = path.join(process.env.HOME, directory.slice(1));
+        directory = path.join(process.env.HOME!, directory.slice(1));
     }
     if (!fs.existsSync(directory)) {
         throw new InvalidArgumentError(`Directory '${directory}' does not exist`);
     }
     return directory;
 }
+
+const program = new Command();
 
 program.command('search')
     .description('find feed url')
@@ -54,9 +54,9 @@ program.command('search')
         podcasts.forEach(podcast => {
             console.log(podcast.name)
             Object.keys(podcast)
-                .filter(key => podcast[key] != undefined)
+                .filter(key => podcast[key as keyof PodcastSearchResult] != undefined)
                 .filter(key => ["genre", "latestRelease", "nbrOfEpisodes", "feedUrl"].includes(key))
-                .forEach(key => console.log(` ${key}: ${podcast[key]}`));
+                .forEach(key => console.log(` ${key}: ${podcast[key as keyof PodcastSearchResult]}`));
         });
     });
 
@@ -69,8 +69,8 @@ program.command('list')
             console.log(`${(episodes.length - i)}. ${episode.title}`)
             Object.keys(episode)
                 .filter(key => ["pubDate", "url", "duration", "size"].includes(key))
-                .filter(key => episode[key] != undefined)
-                .forEach(key => console.log(` ${key}: ${episode[key]}`));
+                .filter(key => episode[key as keyof Episode] != undefined)
+                .forEach(key => console.log(` ${key}: ${episode[key as keyof Episode]}`));
             console.log("\n")
         });
     });
