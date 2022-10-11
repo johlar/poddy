@@ -31,31 +31,38 @@ const sorted = (episodes: Array<Episode>): Array<Episode> => {
     return episodes;
 }
 
+const parseEpisode = (feedItem: any): Episode => {
+    const description = feedItem.description._cdata ?? feedItem['itunes:summary']?._text ?? "";
+    const sizeMb = (feedItem.enclosure._attributes.length / 1024 / 1024).toFixed(1);
+    const episodeNo = parseInt(feedItem['itunes:episode']?._text, 10);
+    return {
+        title: feedItem.title._cdata ?? feedItem.title?._text,
+        pubDate: new Date(Date.parse(feedItem.pubDate._text)),
+        guid: feedItem.guid?._cdata ?? feedItem.guid._text,
+        duration: feedItem['itunes:duration']?._text,
+        size: `${sizeMb} MB`,
+        url: feedItem.enclosure._attributes.url,
+        episodeNo: !isNaN(episodeNo) ? episodeNo : undefined,
+        description,
+        imageUrl: feedItem['itunes:image']?._attributes.href,
+        raw: JSON.stringify(feedItem, null, 2)
+    }
+}
+
 const getEpisodeList = async (feedUrl: string): Promise<Array<Episode>> => {
     const response = await axios.get(feedUrl);
     const xml = response.data;
     const json = JSON.parse(xml2json(xml, { compact: true }));
+    const feedItems = json.rss.channel.item;
 
-    const episodes = json.rss.channel.item
-        .filter((feedItem: any) => undefined != feedItem.enclosure) // remove items which are not podcasts, like ads/promos
-        .map((feedItem: any) => {
-            const description = feedItem.description._cdata ?? feedItem['itunes:summary']?._text ?? "";
-            const sizeMb = (feedItem.enclosure._attributes.length / 1024 / 1024).toFixed(1);
-            const episodeNo = parseInt(feedItem['itunes:episode']?._text, 10);
-            return {
-                title: feedItem.title._cdata ?? feedItem.title?._text,
-                pubDate: new Date(Date.parse(feedItem.pubDate._text)),
-                guid: feedItem.guid?._cdata ?? feedItem.guid._text,
-                duration: feedItem['itunes:duration']?._text,
-                size: `${sizeMb} MB`,
-                url: feedItem.enclosure._attributes.url,
-                episodeNo: !isNaN(episodeNo) ? episodeNo : undefined,
-                description,
-                imageUrl: feedItem['itunes:image']?._attributes.href,
-                raw: JSON.stringify(feedItem, null, 2)
-            }
-        });
-    return sorted(episodes);
+    if (feedItems instanceof Array) {
+        const episodes = feedItems
+            .filter((feedItem: any) => undefined != feedItem.enclosure) // remove items which are not podcasts, like ads/promos
+            .map(parseEpisode);
+        return sorted(episodes);
+    } else {
+        return [parseEpisode(feedItems)]
+    }
 }
 
 export { getEpisodeList, Episode };

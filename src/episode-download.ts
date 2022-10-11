@@ -4,7 +4,7 @@ import * as fsAsync from "fs/promises";
 import * as path from "path";
 import saveShownotes from "./episode-shownotes";
 import { Episode } from "./episode-list"
-const version = require('../package.json').version;
+import { APP_VERSION } from './version';
 
 interface MetadataEntry {
     title: string,
@@ -44,7 +44,7 @@ const fileExtension = (url: string): string => {
 const getOrInitMetadata = async (directory: string): Promise<Metadata> => {
     const metadataPath = path.resolve(directory, "poddy.meta");
     if (!fs.existsSync(metadataPath)) {
-        fs.writeFileSync(metadataPath, JSON.stringify({ poddy: { version }, episodes: {} }))
+        fs.writeFileSync(metadataPath, JSON.stringify({ poddy: { APP_VERSION }, episodes: {} }))
     }
     return JSON.parse(fs.readFileSync(metadataPath).toString());
 }
@@ -77,12 +77,11 @@ const markAsDownloaded = (episode: Episode, what: Array<"episode" | "shownotes">
     return metadata;
 }
 
-const downloadEpisode = (episode: Episode, fullPath: string): Promise<void> => {
-    return new Promise<void>(async (resolve, reject) => {
-
+const downloadEpisode = async (episode: Episode, fullPath: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
         if (fs.existsSync(fullPath)) {
             console.log(`Skipping episode '${episode.title}' because file already exists: '${fullPath}'`);
-            return resolve();
+            return reject("File exists")
         }
 
         console.log(episode.title)
@@ -91,34 +90,36 @@ const downloadEpisode = (episode: Episode, fullPath: string): Promise<void> => {
             .filter(key => episode[key as keyof Episode] != undefined)
             .forEach(key => console.log(` ${key}: ${episode[key as keyof Episode]}`));
 
-        try {
-            const { data, headers } = await axios.get(episode.url, { responseType: 'stream' })
-            const totalBytes = parseInt(headers['content-length']);
-            let downloadedBytes = 0;
+        axios.get(episode.url, { responseType: 'stream' })
+            .then(({ data, headers }) => {
+                const totalBytes = parseInt(headers['content-length']);
+                let downloadedBytes = 0;
 
-            const writer = fs.createWriteStream(fullPath + ".tmp")
+                const writer = fs.createWriteStream(fullPath + ".tmp")
 
-            data.on('data', (chunk: any) => {
-                downloadedBytes = chunk.length + downloadedBytes;
-                printProgress(chunk, downloadedBytes, totalBytes)
-            });
-            data.on('error', (err: any) => {
+                data.on('data', (chunk: any) => {
+                    downloadedBytes = chunk.length + downloadedBytes;
+                    printProgress(chunk, downloadedBytes, totalBytes)
+                });
+                data.on('error', (err: any) => {
+                    fs.rmSync(fullPath + ".tmp", { force: true });
+                    console.error(`Download failed for: \n title: ${episode.title} \n url: ${episode.url} \n error: ${err.message})`)
+                    return reject("Download failed")
+                });
+                data.on('end', () => {
+                    fs.renameSync(fullPath + ".tmp", fullPath);
+                    console.log(` path: ${fullPath}`)
+                    writer.close();
+                    return resolve();
+                })
+
+                data.pipe(writer)
+            })
+            .catch(err => {
                 fs.rmSync(fullPath + ".tmp", { force: true });
                 console.error(`Download failed for: \n title: ${episode.title} \n url: ${episode.url} \n error: ${err.message})`)
-                return reject();
+                return reject("Download failed")
             });
-            data.on('end', () => {
-                fs.renameSync(fullPath + ".tmp", fullPath);
-                console.log(` path: ${fullPath}`)
-                return resolve();
-            })
-
-            data.pipe(writer)
-        } catch (err: any) {
-            fs.rmSync(fullPath + ".tmp", { force: true });
-            console.error(`Download failed for: \n title: ${episode.title} \n url: ${episode.url} \n error: ${err.message})`)
-            return reject();
-        }
     });
 }
 
@@ -127,7 +128,7 @@ const downloadEpisodes = async (episodes: Array<Episode>, directory: string, inc
 
     for (let i = 0; i < episodes.length; i++) {
         const episode = episodes[i];
-        const tasks: Array<({ what: "episode" | "shownotes", func: () => {} })> = [];
+        const tasks: Array<({ what: "episode" | "shownotes", func: () => Promise<void> })> = [];
 
         if (!isDownloaded("episode", episode.guid, metadata)) {
             const fullPath = path.resolve(directory, `${episode.title}.${fileExtension(episode.url)}`);
@@ -141,10 +142,10 @@ const downloadEpisodes = async (episodes: Array<Episode>, directory: string, inc
         if (tasks.length == 0) {
             console.log(`Skipping: ${episode.title}`);
         } else {
-            console.log(`Downloading ${tasks.map(task => task.what).join(", ")}: ${episode.title}`);
+            console.log(`Downloading ${tasks.map(task => task.what).join(", ")}: ${episode.title}`);
         }
 
-        let resolvedTasks: Array<"episode" | "shownotes"> = [];
+        const resolvedTasks: Array<"episode" | "shownotes"> = [];
         await Promise.allSettled(tasks.map(task => task.func()))
             .then(results => {
                 results.forEach((result, i) => {

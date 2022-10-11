@@ -4,6 +4,9 @@ import downloadEpisodes from "./episode-download";
 import { getEpisodeList, Episode } from "./episode-list";
 import * as fs from 'fs';
 import * as path from "path";
+import { APP_VERSION } from './version';
+
+const program = new Command();
 
 const parseEpisodeRange = (input: string): { from: number, to?: number } => {
     // note: index 1 based to make sense for episode numbers
@@ -34,8 +37,8 @@ const parseEpisodeRange = (input: string): { from: number, to?: number } => {
 }
 
 const parseDirectory = (directory: string): string => {
-    if (directory.startsWith('~')) {
-        directory = path.join(process.env.HOME!, directory.slice(1));
+    if (directory.startsWith('~') && process.env.HOME) {
+        directory = path.join(process.env.HOME, directory.slice(1));
     }
     if (!fs.existsSync(directory)) {
         throw new InvalidArgumentError(`Directory '${directory}' does not exist`);
@@ -43,13 +46,16 @@ const parseDirectory = (directory: string): string => {
     return directory;
 }
 
-const program = new Command();
+program
+    .name('Poddy')
+    .description('CLI Podcast Downloader')
+    .version(APP_VERSION);
 
 program.command('search')
     .description('find feed url')
     .requiredOption('-n, --name <name>', 'name of podcast')
     .action(async (options) => {
-        let podcasts = await searchPodcasts(options.name);
+        const podcasts = await searchPodcasts(options.name);
 
         podcasts.forEach(podcast => {
             console.log(podcast.name)
@@ -64,7 +70,7 @@ program.command('list')
     .description('display episode list')
     .requiredOption('-u, --url <url>', 'url to podcast feed')
     .action(async (options) => {
-        let episodes = await getEpisodeList(options.url);
+        const episodes = await getEpisodeList(options.url);
         episodes.forEach((episode, i) => {
             console.log(`${(episodes.length - i)}. ${episode.title}`)
             Object.keys(episode)

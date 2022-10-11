@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as fsAsync from "fs/promises";
 import * as he from 'he';
 import axios from "axios";
-const version = require('../package.json').version;
+import { APP_VERSION } from "./version"
 
 let cache: { [key: string]: any } = {};
 const base64Data = async (imageUrl: string): Promise<string> => {
@@ -32,7 +32,7 @@ const base64Data = async (imageUrl: string): Promise<string> => {
 const createHtml = async (episode: Episode): Promise<string> => {
     const propertyHtml = (property: any, svgUrl: string) => {
         if (!property) { return ""; }
-        return `<span class="d-inline-block"><object class="px-2" data="${svgUrl}" type="image/svg+xml"></object>${he.encode(property)}</span>`
+        return `<span class="d-inline-block"><object class="px-2" data="${svgUrl}" type="image/svg+xml"></object>${he.encode(property.toString())}</span>`
     }
     // download image to be immune to dying links
     const image = await base64Data(episode.imageUrl);
@@ -82,7 +82,7 @@ const createHtml = async (episode: Episode): Promise<string> => {
                                 <pre class="py-2">${he.encode(episode.raw)}</pre>
                             </div>
                             <div class="modal-footer text-muted">
-                                <a href="https://github.com/johlar/poddy" target="_blank">Poddy ${version}</a>
+                                <a href="https://github.com/johlar/poddy" target="_blank">Poddy ${APP_VERSION}</a>
                             </div>                    
                         </div>
                     </div>
@@ -96,10 +96,14 @@ const createHtml = async (episode: Episode): Promise<string> => {
 
 const saveShownotes = async (episode: Episode, fullPath: string): Promise<void> => {
     if (fs.existsSync(fullPath)) {
-        console.log(`Skipping shownotes because file already exist at ${fullPath}`);
-        return Promise.reject();
+        return Promise.reject(`File already exist at ${fullPath}`);
     }
-    return await fsAsync.writeFile(fullPath, await createHtml(episode));
+    try {
+        return await fsAsync.writeFile(fullPath, await createHtml(episode));
+    } catch (err: any) {
+        console.error(err);
+        return Promise.reject(err.message);
+    }
 }
 
 export default saveShownotes;
