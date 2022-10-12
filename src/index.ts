@@ -89,27 +89,22 @@ program.command('download')
     .option('-e, --episodes <number|range>', 'podcasts to download', parseEpisodeRange)
     .option('-s, --shownotes', 'should include shownotes')
     .action(async (options) => {
-        const episodes = (await getChannel(options.url)).episodes
+        const channel = await getChannel(options.url)
 
-        let toDownload = [];
         if (!options.episodes) {
-            toDownload = episodes;
+            await downloadEpisodes(channel, 1, channel.episodes.length + 1, options.directory, options.shownotes);
         } else {
             const isTakeLatest = options.episodes.to == undefined;
 
             const firstEpisodeNbr = isTakeLatest
-                ? episodes.length + 1 + options.episodes.from // from is negative
+                ? channel.episodes.length + 1 + options.episodes.from // from is negative
                 : options.episodes.from;
             const lastEpisodeNbr = isTakeLatest
-                ? episodes.length
+                ? channel.episodes.length
                 : options.episodes.to;
 
-            toDownload = episodes
-                .slice(firstEpisodeNbr - 1, lastEpisodeNbr)
+            await downloadEpisodes(channel, firstEpisodeNbr, lastEpisodeNbr, options.directory, options.shownotes);
         }
-
-        console.log(`Downloading ${toDownload.length} episodes..`);
-        await downloadEpisodes(toDownload, options.directory, options.shownotes);
     });
 
 program.parse();

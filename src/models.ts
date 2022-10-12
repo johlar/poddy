@@ -1,15 +1,13 @@
-interface MetadataEntry {
-    title: string,
-    episode: boolean,
-    shownotes: boolean
-}
-
 interface Metadata {
     poddy: {
         version: string
     }
     episodes: {
-        [key: string]: MetadataEntry
+        [key: string]: {
+            title: string,
+            enclosure: boolean,
+            shownotes: boolean
+        }
     }
 }
 
@@ -44,6 +42,5 @@ export {
     IEpisode,
     IChannel,
     IChannelSearchResult,
-    Metadata,
-    MetadataEntry
+    Metadata
 }

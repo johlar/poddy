@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as fsAsync from "fs/promises";
 import * as path from "path";
 import { saveShownotes } from "./episode-shownotes";
-import { IEpisode, Metadata } from "./models"
+import { IChannel, IEpisode, Metadata } from "./models"
 import { APP_VERSION } from './version';
 
 const printProgress = (chunk: any, downloaded: number, total: number): void => {
@@ -39,24 +39,24 @@ const persistMetadata = async (metadata: Metadata, directory: string): Promise<a
     await fsAsync.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
 }
 
-const isDownloaded = (what: "episode" | "shownotes", guid: string, metadata: Metadata): boolean => {
+const isDownloaded = (what: "enclosure" | "shownotes", guid: string, metadata: Metadata): boolean => {
     return !!metadata.episodes[guid]?.[what]
 }
 
-const markAsDownloaded = (episode: IEpisode, what: Array<"episode" | "shownotes">, metadata: Metadata): Metadata => {
+const markAsDownloaded = (episode: IEpisode, what: Array<"enclosure" | "shownotes">, metadata: Metadata): Metadata => {
     const existingEntry = metadata.episodes[episode.guid];
 
     if (existingEntry) {
         metadata.episodes[episode.guid] = {
             ...existingEntry,
-            episode: what.includes('episode') || existingEntry.episode,
+            enclosure: what.includes('enclosure') || existingEntry.enclosure,
             shownotes: what.includes('shownotes') || existingEntry.shownotes
         }
         return metadata;
     }
     metadata.episodes[episode.guid] = {
         title: episode.title,
-        episode: what.includes('episode'),
+        enclosure: what.includes('enclosure'),
         shownotes: what.includes('shownotes')
     }
     return metadata;
@@ -108,19 +108,32 @@ const downloadEpisode = async (episode: IEpisode, fullPath: string): Promise<voi
     });
 }
 
-const downloadEpisodes = async (episodes: Array<IEpisode>, directory: string, includeShownotes: boolean): Promise<void> => {
-    let metadata = await getOrInitMetadata(directory);
+const downloadEpisodes = async (
+    channel: IChannel,
+    firstEpisodeNbr: number,
+    lastEpisodeNbr: number,
+    rootDirectory: string,
+    includeShownotes: boolean
+): Promise<void> => {
+    const channelDirectory = path.resolve(rootDirectory, channel.title);
+    // create folder if it does not exist
+    await fsAsync.mkdir(channelDirectory, { recursive: true })
+    let metadata = await getOrInitMetadata(channelDirectory);
 
-    for (let i = 0; i < episodes.length; i++) {
-        const episode = episodes[i];
-        const tasks: Array<({ what: "episode" | "shownotes", func: () => Promise<void> })> = [];
+    const toDownload = channel.episodes
+        .slice(firstEpisodeNbr - 1, lastEpisodeNbr)
 
-        if (!isDownloaded("episode", episode.guid, metadata)) {
-            const fullPath = path.resolve(directory, `${episode.title}.${fileExtension(episode.url)}`);
-            tasks.push({ what: "episode", func: () => downloadEpisode(episode, fullPath) })
+    for (let i = 0; i < toDownload.length; i++) {
+        const episode = toDownload[i];
+        const tasks: Array<({ what: "enclosure" | "shownotes", func: () => Promise<void> })> = [];
+        
+        const fileName = `${episode.pubDate.toISOString().split('T')[0]} - ${episode.title}`;
+        if (!isDownloaded("enclosure", episode.guid, metadata)) {
+            const fullPath = path.resolve(channelDirectory, `${fileName}.${fileExtension(episode.url)}`);
+            tasks.push({ what: "enclosure", func: () => downloadEpisode(episode, fullPath) })
         }
         if (includeShownotes && !isDownloaded("shownotes", episode.guid, metadata)) {
-            const fullPath = path.resolve(directory, `${episode.title}-shownotes.html`)
+            const fullPath = path.resolve(channelDirectory, `${fileName}.html`)
             tasks.push({ what: "shownotes", func: () => saveShownotes(episode, fullPath) })
         }
 
@@ -130,7 +143,7 @@ const downloadEpisodes = async (episodes: Array<IEpisode>, directory: string, in
             console.log(`Downloading ${tasks.map(task => task.what).join(", ")}: ${episode.title}`);
         }
 
-        const resolvedTasks: Array<"episode" | "shownotes"> = [];
+        const resolvedTasks: Array<"enclosure" | "shownotes"> = [];
         await Promise.allSettled(tasks.map(task => task.func()))
             .then(results => {
                 results.forEach((result, i) => {
@@ -141,7 +154,7 @@ const downloadEpisodes = async (episodes: Array<IEpisode>, directory: string, in
             })
 
         metadata = markAsDownloaded(episode, resolvedTasks, metadata)
-        await persistMetadata(metadata, directory);
+        await persistMetadata(metadata, channelDirectory);
     }
 }
 

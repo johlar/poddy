@@ -1,5 +1,7 @@
 # Poddy - CLI Podcast Downloader
 
+**NOTE! Poddy is still in BETA. Semantic versioning is not enforced and non-backwards compatible changes may be released at any time.** 
+
 This command line tool downloads podcast episodes from an RSS feed.
 
 I originally made Poddy for my own use to help me archive my favorite podcasts. I'm hoping it might be useful for other data hoarders out there! 📦📚

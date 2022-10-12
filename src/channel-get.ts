@@ -7,7 +7,7 @@ const parseEpisode = (feedItem: any): IEpisode => {
     const sizeMb = (feedItem.enclosure._attributes.length / 1024 / 1024).toFixed(1);
     const episodeNo = parseInt(feedItem['itunes:episode']?._text, 10);
     return {
-        title: feedItem.title._cdata ?? feedItem.title?._text,
+        title: (feedItem.title._cdata ?? feedItem.title?._text ?? "").trim(),
         pubDate: new Date(Date.parse(feedItem.pubDate._text)),
         guid: feedItem.guid?._cdata ?? feedItem.guid._text,
         duration: feedItem['itunes:duration']?._text,
@@ -27,10 +27,11 @@ const parseChannel = (json: any): IChannel => {
     if (feedItems instanceof Array) {
         const episodes = feedItems
             .filter((feedItem: any) => undefined != feedItem.enclosure) // remove items which are not podcasts, like ads/promos
-            .map(parseEpisode);
-        return { title: channel.title._text, raw: channel, episodes };
+            .map(parseEpisode)
+            .reverse(); // make into chronological order
+        return { title: (channel.title?._cdata ?? channel?.title?._text ?? "").trim(), raw: channel, episodes };
     } else {
-        return { title: channel.title_text, raw: channel, episodes: [parseEpisode(feedItems)] };
+        return { title: (channel.title?._cdata ?? channel?.title?._text ?? "").trim(), raw: channel, episodes: [parseEpisode(feedItems)] };
     }
 }
 
