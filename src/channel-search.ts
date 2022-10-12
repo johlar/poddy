@@ -1,12 +1,5 @@
 import axios from 'axios';
-
-interface PodcastSearchResult {
-    name: string,
-    genre: string,
-    latestRelease: Date,
-    nbrOfEpisodes: number,
-    feedUrl: string
-}
+import { IChannelSearchResult } from "./models";
 
 const iTunesSearchUrl = (searchTerm: string) => {
     // https://performance-partners.apple.com/resources/documentation/itunes-store-web-service-search-api.html#searching
@@ -14,7 +7,7 @@ const iTunesSearchUrl = (searchTerm: string) => {
     return `https://itunes.apple.com/search?entity=podcast&term=${formatted}`;
 }
 
-const searchPodcasts = async (searchTerm: string): Promise<Array<PodcastSearchResult>> => {
+const searchChannels = async (searchTerm: string): Promise<Array<IChannelSearchResult>> => {
     try {
         const response = await axios.get(iTunesSearchUrl(searchTerm));
         const results = response.data.results
@@ -32,4 +25,4 @@ const searchPodcasts = async (searchTerm: string): Promise<Array<PodcastSearchRe
     }
 }
 
-export { searchPodcasts, PodcastSearchResult };
+export { searchChannels };

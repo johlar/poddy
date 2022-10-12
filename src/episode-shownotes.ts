@@ -1,4 +1,4 @@
-import { Episode } from "./episode-list";
+import { IEpisode } from "./models";
 import * as fs from "fs";
 import * as fsAsync from "fs/promises";
 import * as he from 'he';
@@ -29,7 +29,7 @@ const base64Data = async (imageUrl: string): Promise<string> => {
     return "";
 }
 
-const createHtml = async (episode: Episode): Promise<string> => {
+const createHtml = async (episode: IEpisode): Promise<string> => {
     const propertyHtml = (property: any, svgUrl: string) => {
         if (!property) { return ""; }
         return `<span class="d-inline-block"><object class="px-2" data="${svgUrl}" type="image/svg+xml"></object>${he.encode(property.toString())}</span>`
@@ -94,7 +94,7 @@ const createHtml = async (episode: Episode): Promise<string> => {
         </html>`
 }
 
-const saveShownotes = async (episode: Episode, fullPath: string): Promise<void> => {
+const saveShownotes = async (episode: IEpisode, fullPath: string): Promise<void> => {
     if (fs.existsSync(fullPath)) {
         return Promise.reject(`File already exist at ${fullPath}`);
     }
@@ -106,4 +106,4 @@ const saveShownotes = async (episode: Episode, fullPath: string): Promise<void> 
     }
 }
 
-export default saveShownotes;
+export { saveShownotes };

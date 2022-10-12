@@ -2,24 +2,9 @@ import axios from 'axios';
 import * as fs from "fs";
 import * as fsAsync from "fs/promises";
 import * as path from "path";
-import saveShownotes from "./episode-shownotes";
-import { Episode } from "./episode-list"
+import { saveShownotes } from "./episode-shownotes";
+import { IEpisode, Metadata } from "./models"
 import { APP_VERSION } from './version';
-
-interface MetadataEntry {
-    title: string,
-    episode: boolean,
-    shownotes: boolean
-}
-
-interface Metadata {
-    poddy: {
-        version: string
-    }
-    episodes: {
-        [key: string]: MetadataEntry
-    }
-}
 
 const printProgress = (chunk: any, downloaded: number, total: number): void => {
     if (chunk.length + downloaded <= total) {
@@ -58,7 +43,7 @@ const isDownloaded = (what: "episode" | "shownotes", guid: string, metadata: Met
     return !!metadata.episodes[guid]?.[what]
 }
 
-const markAsDownloaded = (episode: Episode, what: Array<"episode" | "shownotes">, metadata: Metadata): Metadata => {
+const markAsDownloaded = (episode: IEpisode, what: Array<"episode" | "shownotes">, metadata: Metadata): Metadata => {
     const existingEntry = metadata.episodes[episode.guid];
 
     if (existingEntry) {
@@ -77,7 +62,7 @@ const markAsDownloaded = (episode: Episode, what: Array<"episode" | "shownotes">
     return metadata;
 }
 
-const downloadEpisode = async (episode: Episode, fullPath: string): Promise<void> => {
+const downloadEpisode = async (episode: IEpisode, fullPath: string): Promise<void> => {
     return new Promise((resolve, reject) => {
         if (fs.existsSync(fullPath)) {
             console.log(`Skipping episode '${episode.title}' because file already exists: '${fullPath}'`);
@@ -87,8 +72,8 @@ const downloadEpisode = async (episode: Episode, fullPath: string): Promise<void
         console.log(episode.title)
         Object.keys(episode)
             .filter(key => ["pubDate"].includes(key))
-            .filter(key => episode[key as keyof Episode] != undefined)
-            .forEach(key => console.log(` ${key}: ${episode[key as keyof Episode]}`));
+            .filter(key => episode[key as keyof IEpisode] != undefined)
+            .forEach(key => console.log(` ${key}: ${episode[key as keyof IEpisode]}`));
 
         axios.get(episode.url, { responseType: 'stream' })
             .then(({ data, headers }) => {
@@ -123,7 +108,7 @@ const downloadEpisode = async (episode: Episode, fullPath: string): Promise<void
     });
 }
 
-const downloadEpisodes = async (episodes: Array<Episode>, directory: string, includeShownotes: boolean): Promise<void> => {
+const downloadEpisodes = async (episodes: Array<IEpisode>, directory: string, includeShownotes: boolean): Promise<void> => {
     let metadata = await getOrInitMetadata(directory);
 
     for (let i = 0; i < episodes.length; i++) {
@@ -160,4 +145,4 @@ const downloadEpisodes = async (episodes: Array<Episode>, directory: string, inc
     }
 }
 
-export default downloadEpisodes;
+export { downloadEpisodes };

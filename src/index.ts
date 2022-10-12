@@ -1,7 +1,8 @@
 import { Command, InvalidArgumentError } from 'commander';
-import { searchPodcasts, PodcastSearchResult } from "./podcast-search";
-import downloadEpisodes from "./episode-download";
-import { getEpisodeList, Episode } from "./episode-list";
+import { searchChannels } from "./channel-search";
+import { downloadEpisodes } from "./episode-download";
+import { getChannel } from "./channel-get";
+import { IEpisode, IChannelSearchResult } from "./models"
 import * as fs from 'fs';
 import * as path from "path";
 import { APP_VERSION } from './version';
@@ -55,14 +56,14 @@ program.command('search')
     .description('find feed url')
     .requiredOption('-n, --name <name>', 'name of podcast')
     .action(async (options) => {
-        const podcasts = await searchPodcasts(options.name);
+        const channels = await searchChannels(options.name);
 
-        podcasts.forEach(podcast => {
-            console.log(podcast.name)
-            Object.keys(podcast)
-                .filter(key => podcast[key as keyof PodcastSearchResult] != undefined)
+        channels.forEach(channel => {
+            console.log(channel.name)
+            Object.keys(channel)
+                .filter(key => channel[key as keyof IChannelSearchResult] != undefined)
                 .filter(key => ["genre", "latestRelease", "nbrOfEpisodes", "feedUrl"].includes(key))
-                .forEach(key => console.log(` ${key}: ${podcast[key as keyof PodcastSearchResult]}`));
+                .forEach(key => console.log(` ${key}: ${channel[key as keyof IChannelSearchResult]}`));
         });
     });
 
@@ -70,13 +71,13 @@ program.command('list')
     .description('display episode list')
     .requiredOption('-u, --url <url>', 'url to podcast feed')
     .action(async (options) => {
-        const episodes = await getEpisodeList(options.url);
+        const episodes = await (await getChannel(options.url)).episodes;
         episodes.forEach((episode, i) => {
             console.log(`${(episodes.length - i)}. ${episode.title}`)
             Object.keys(episode)
                 .filter(key => ["pubDate", "url", "duration", "size"].includes(key))
-                .filter(key => episode[key as keyof Episode] != undefined)
-                .forEach(key => console.log(` ${key}: ${episode[key as keyof Episode]}`));
+                .filter(key => episode[key as keyof IEpisode] != undefined)
+                .forEach(key => console.log(` ${key}: ${episode[key as keyof IEpisode]}`));
             console.log("\n")
         });
     });
@@ -88,8 +89,7 @@ program.command('download')
     .option('-e, --episodes <number|range>', 'podcasts to download', parseEpisodeRange)
     .option('-s, --shownotes', 'should include shownotes')
     .action(async (options) => {
-        // make episodes chronological order (lowest = oldest)
-        const episodes = (await getEpisodeList(options.url)).reverse();
+        const episodes = (await getChannel(options.url)).episodes
 
         let toDownload = [];
         if (!options.episodes) {
