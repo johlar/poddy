@@ -11,7 +11,7 @@ const printProgress = (chunk: any, downloaded: number, total: number): void => {
         const progress = ((chunk.length + downloaded) / total * 100).toFixed(1);
         const totalMb = ((total) / 1024 / 1024).toFixed(2);
         process.stdout.clearLine(0)
-        process.stdout.write(` progress: ${progress}% of ${totalMb} MB`);
+        process.stdout.write(`Progress: ${progress}% of ${totalMb} MB`);
         process.stdout.cursorTo(0);
     }
 }
@@ -29,9 +29,14 @@ const fileExtension = (url: string): string => {
 const getOrInitMetadata = async (directory: string): Promise<Metadata> => {
     const metadataPath = path.resolve(directory, "poddy.meta");
     if (!fs.existsSync(metadataPath)) {
-        fs.writeFileSync(metadataPath, JSON.stringify({ poddy: { APP_VERSION }, episodes: {} }))
+        const empty : Metadata = { poddy: { version: APP_VERSION }, episodes: {} };
+        fs.writeFileSync(metadataPath, JSON.stringify(empty))
     }
-    return JSON.parse(fs.readFileSync(metadataPath).toString());
+    try {
+        return JSON.parse(fs.readFileSync(metadataPath).toString());
+    } catch (err: any) {
+        throw new Error(`Could not open metadata file. ${err.message}`)
+    }
 }
 
 const persistMetadata = async (metadata: Metadata, directory: string): Promise<any> => {
@@ -43,7 +48,8 @@ const isDownloaded = (what: "enclosure" | "shownotes", guid: string, metadata: M
     return !!metadata.episodes[guid]?.[what]
 }
 
-const markAsDownloaded = (episode: IEpisode, what: Array<"enclosure" | "shownotes">, metadata: Metadata): Metadata => {
+const markAsDownloaded = (episode: IEpisode, what: Array<"enclosure" | "shownotes">, oldMetadata: Metadata): Metadata => {
+    const metadata = { ...oldMetadata };
     const existingEntry = metadata.episodes[episode.guid];
 
     if (existingEntry) {
@@ -62,38 +68,43 @@ const markAsDownloaded = (episode: IEpisode, what: Array<"enclosure" | "shownote
     return metadata;
 }
 
-const downloadEpisode = async (episode: IEpisode, fullPath: string): Promise<void> => {
+const downloadEpisode = async (episode: IEpisode, fullPath: string, signal: AbortSignal): Promise<void> => {
     return new Promise((resolve, reject) => {
         if (fs.existsSync(fullPath)) {
-            console.log(`Skipping episode '${episode.title}' because file already exists: '${fullPath}'`);
-            return reject("File exists")
+            return reject(`Skipped episode because file already exists: '${fullPath}'`)
         }
+        const writer = fs.createWriteStream(fullPath + ".tmp")
 
-        console.log(episode.title)
-        Object.keys(episode)
-            .filter(key => ["pubDate"].includes(key))
-            .filter(key => episode[key as keyof IEpisode] != undefined)
-            .forEach(key => console.log(` ${key}: ${episode[key as keyof IEpisode]}`));
+        const abort = (reason: Event | string) => {
+            writer.close();
+            fs.rmSync(fullPath + ".tmp", { force: true });
+            signal.removeEventListener("abort", abort);
+            if (reason instanceof Event) {
+                reject("Download was not completed due to event: " + reason.type);
+            } else {
+                reject("Download was not completed. " + reason);
+            }
+        }
+        signal.addEventListener("abort", abort);
 
-        axios.get(episode.url, { responseType: 'stream' })
+        axios.get(episode.url, { signal, responseType: 'stream' })
             .then(({ data, headers }) => {
                 const totalBytes = parseInt(headers['content-length']);
                 let downloadedBytes = 0;
 
-                const writer = fs.createWriteStream(fullPath + ".tmp")
-
                 data.on('data', (chunk: any) => {
+                    if (signal.aborted) {
+                        return reject("Aborted on received data")
+                    }
                     downloadedBytes = chunk.length + downloadedBytes;
                     printProgress(chunk, downloadedBytes, totalBytes)
                 });
                 data.on('error', (err: any) => {
-                    fs.rmSync(fullPath + ".tmp", { force: true });
-                    console.error(`Download failed for: \n title: ${episode.title} \n url: ${episode.url} \n error: ${err.message})`)
-                    return reject("Download failed")
+                    abort("Error in stream: " + err?.message);
                 });
                 data.on('end', () => {
                     fs.renameSync(fullPath + ".tmp", fullPath);
-                    console.log(` path: ${fullPath}`)
+                    signal.removeEventListener("abort", abort)
                     writer.close();
                     return resolve();
                 })
@@ -101,9 +112,7 @@ const downloadEpisode = async (episode: IEpisode, fullPath: string): Promise<voi
                 data.pipe(writer)
             })
             .catch(err => {
-                fs.rmSync(fullPath + ".tmp", { force: true });
-                console.error(`Download failed for: \n title: ${episode.title} \n url: ${episode.url} \n error: ${err.message})`)
-                return reject("Download failed")
+                abort("Error in get: " + err?.message);
             });
     });
 }
@@ -113,7 +122,8 @@ const downloadEpisodes = async (
     firstEpisodeNbr: number,
     lastEpisodeNbr: number,
     rootDirectory: string,
-    includeShownotes: boolean
+    includeShownotes: boolean,
+    signal: AbortSignal
 ): Promise<void> => {
     const channelDirectory = path.resolve(rootDirectory, channel.title);
     // create folder if it does not exist
@@ -123,14 +133,14 @@ const downloadEpisodes = async (
     const toDownload = channel.episodes
         .slice(firstEpisodeNbr - 1, lastEpisodeNbr)
 
-    for (let i = 0; i < toDownload.length; i++) {
+    for (let i = 0; i < toDownload.length && !signal.aborted; i++) {
         const episode = toDownload[i];
         const tasks: Array<({ what: "enclosure" | "shownotes", func: () => Promise<void> })> = [];
-        
+
         const fileName = `${episode.pubDate.toISOString().split('T')[0]} - ${episode.title}`;
         if (!isDownloaded("enclosure", episode.guid, metadata)) {
             const fullPath = path.resolve(channelDirectory, `${fileName}.${fileExtension(episode.url)}`);
-            tasks.push({ what: "enclosure", func: () => downloadEpisode(episode, fullPath) })
+            tasks.push({ what: "enclosure", func: () => downloadEpisode(episode, fullPath, signal) })
         }
         if (includeShownotes && !isDownloaded("shownotes", episode.guid, metadata)) {
             const fullPath = path.resolve(channelDirectory, `${fileName}.html`)
@@ -140,7 +150,7 @@ const downloadEpisodes = async (
         if (tasks.length == 0) {
             console.log(`Skipping: ${episode.title}`);
         } else {
-            console.log(`Downloading ${tasks.map(task => task.what).join(", ")}: ${episode.title}`);
+            console.log(`Downloading: ${episode.title} (${tasks.map(task => task.what).join(", ")})`);
         }
 
         const resolvedTasks: Array<"enclosure" | "shownotes"> = [];

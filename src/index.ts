@@ -7,6 +7,8 @@ import * as fs from 'fs';
 import * as path from "path";
 import { APP_VERSION } from './version';
 
+const abortController = new AbortController();
+let currentTask: Promise<any> | undefined;
 const program = new Command();
 
 const parseEpisodeRange = (input: string): { from: number, to?: number } => {
@@ -56,30 +58,39 @@ program.command('search')
     .description('find feed url')
     .requiredOption('-n, --name <name>', 'name of podcast')
     .action(async (options) => {
-        const channels = await searchChannels(options.name);
+        try {
+            const channels = await searchChannels(options.name);
 
-        channels.forEach(channel => {
-            console.log(channel.name)
-            Object.keys(channel)
-                .filter(key => channel[key as keyof IChannelSearchResult] != undefined)
-                .filter(key => ["genre", "latestRelease", "nbrOfEpisodes", "feedUrl"].includes(key))
-                .forEach(key => console.log(` ${key}: ${channel[key as keyof IChannelSearchResult]}`));
-        });
+            channels.forEach(channel => {
+                console.log(channel.name)
+                Object.keys(channel)
+                    .filter(key => channel[key as keyof IChannelSearchResult] != undefined)
+                    .filter(key => ["genre", "latestRelease", "nbrOfEpisodes", "feedUrl"].includes(key))
+                    .forEach(key => console.log(` ${key}: ${channel[key as keyof IChannelSearchResult]}`));
+            });
+        } catch (err: any) {
+            console.error("ERROR: " + err.message);
+        }
     });
 
 program.command('list')
     .description('display episode list')
     .requiredOption('-u, --url <url>', 'url to podcast feed')
     .action(async (options) => {
-        const episodes = await (await getChannel(options.url)).episodes;
-        episodes.forEach((episode, i) => {
-            console.log(`${(episodes.length - i)}. ${episode.title}`)
-            Object.keys(episode)
-                .filter(key => ["pubDate", "url", "duration", "size"].includes(key))
-                .filter(key => episode[key as keyof IEpisode] != undefined)
-                .forEach(key => console.log(` ${key}: ${episode[key as keyof IEpisode]}`));
-            console.log("\n")
-        });
+        try {
+            const episodes = await (await getChannel(options.url)).episodes;
+            episodes.forEach((episode, i) => {
+                console.log(`${(episodes.length - i)}. ${episode.title}`)
+                Object.keys(episode)
+                    .filter(key => ["pubDate", "url", "duration", "size"].includes(key))
+                    .filter(key => episode[key as keyof IEpisode] != undefined)
+                    .forEach(key => console.log(` ${key}: ${episode[key as keyof IEpisode]}`));
+                console.log("\n")
+            });
+        }
+        catch (err: any) {
+            console.error("ERROR: " + err.message);
+        }
     });
 
 program.command('download')
@@ -89,22 +100,34 @@ program.command('download')
     .option('-e, --episodes <number|range>', 'podcasts to download', parseEpisodeRange)
     .option('-s, --shownotes', 'should include shownotes')
     .action(async (options) => {
+        const { signal } = abortController;
         const channel = await getChannel(options.url)
+        try {
+            if (!options.episodes) {
+                currentTask = downloadEpisodes(channel, 1, channel.episodes.length + 1, options.directory, options.shownotes, signal);
+                await currentTask;
+            } else {
+                const isTakeLatest = options.episodes.to == undefined;
 
-        if (!options.episodes) {
-            await downloadEpisodes(channel, 1, channel.episodes.length + 1, options.directory, options.shownotes);
-        } else {
-            const isTakeLatest = options.episodes.to == undefined;
+                const firstEpisodeNbr = isTakeLatest
+                    ? channel.episodes.length + 1 + options.episodes.from // from is negative
+                    : options.episodes.from;
+                const lastEpisodeNbr = isTakeLatest
+                    ? channel.episodes.length
+                    : options.episodes.to;
 
-            const firstEpisodeNbr = isTakeLatest
-                ? channel.episodes.length + 1 + options.episodes.from // from is negative
-                : options.episodes.from;
-            const lastEpisodeNbr = isTakeLatest
-                ? channel.episodes.length
-                : options.episodes.to;
-
-            await downloadEpisodes(channel, firstEpisodeNbr, lastEpisodeNbr, options.directory, options.shownotes);
+                currentTask = downloadEpisodes(channel, firstEpisodeNbr, lastEpisodeNbr, options.directory, options.shownotes, signal);
+                await currentTask;
+            }
+        } catch (err: any) {
+            console.error("ERROR: " + err.message);
         }
     });
 
 program.parse();
+
+process.on("SIGINT", async () => {
+    abortController.abort();
+    await currentTask;
+    process.exit();
+})
