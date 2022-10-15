@@ -29,7 +29,7 @@ const fileExtension = (url: string): string => {
 const getOrInitMetadata = async (directory: string): Promise<Metadata> => {
     const metadataPath = path.resolve(directory, "poddy.meta");
     if (!fs.existsSync(metadataPath)) {
-        const empty : Metadata = { poddy: { version: APP_VERSION }, episodes: {} };
+        const empty: Metadata = { poddy: { version: APP_VERSION }, episodes: {} };
         fs.writeFileSync(metadataPath, JSON.stringify(empty))
     }
     try {
@@ -147,9 +147,7 @@ const downloadEpisodes = async (
             tasks.push({ what: "shownotes", func: () => saveShownotes(episode, fullPath) })
         }
 
-        if (tasks.length == 0) {
-            console.log(`Skipping: ${episode.title}`);
-        } else {
+        if (tasks.length > 0) {
             console.log(`Downloading: ${episode.title} (${tasks.map(task => task.what).join(", ")})`);
         }
 

@@ -69,7 +69,7 @@ program.command('search')
                     .forEach(key => console.log(` ${key}: ${channel[key as keyof IChannelSearchResult]}`));
             });
         } catch (err: any) {
-            console.error("ERROR: " + err.message);
+            console.error("ERROR: " + err?.message);
         }
     });
 
@@ -78,7 +78,7 @@ program.command('list')
     .requiredOption('-u, --url <url>', 'url to podcast feed')
     .action(async (options) => {
         try {
-            const episodes = await (await getChannel(options.url)).episodes;
+            const episodes = (await getChannel(options.url)).episodes;
             episodes.forEach((episode, i) => {
                 console.log(`${(episodes.length - i)}. ${episode.title}`)
                 Object.keys(episode)
@@ -89,7 +89,7 @@ program.command('list')
             });
         }
         catch (err: any) {
-            console.error("ERROR: " + err.message);
+            console.error("ERROR: " + err?.message);
         }
     });
 
@@ -120,13 +120,42 @@ program.command('download')
                 await currentTask;
             }
         } catch (err: any) {
-            console.error("ERROR: " + err.message);
+            console.error("ERROR: " + err?.message);
+        }
+    });
+
+
+program.command('subscribe')
+    .description('continously download episodes from a feed')
+    .requiredOption('-u, --urls [urls...]', 'url(s) to podcast feed(s)')
+    .requiredOption('-d, --directory <directory>', 'destination of downloads', parseDirectory)
+    .option('-i, --interval', 'interval between feed checks (seconds)', '600')
+    .option('-s, --shownotes', 'should include shownotes')
+    .action(async (options) => {
+        try {
+            const { signal } = abortController;
+            const interval = parseInt(options.interval, 10);
+            const delay = (seconds: number) => new Promise(resolve => setTimeout(resolve, seconds * 1000))
+
+            do {
+                console.log(`Checking ${options.urls.length} channel subscription(s)...`);
+                for (let i = 0; i < options.urls.length; i++) {
+                    const channel = await getChannel(options.urls[i])
+                    currentTask = downloadEpisodes(channel, 1, channel.episodes.length + 1, options.directory, options.shownotes, signal);
+                    await currentTask;
+                }
+                console.log(`Waiting ${interval} seconds before checking again...`)
+                await delay(interval)
+            } while (!signal.aborted)
+        } catch (err: any) {
+            console.error("ERROR: " + err?.message);
         }
     });
 
 program.parse();
 
 process.on("SIGINT", async () => {
+    console.log("Exiting...");
     abortController.abort();
     await currentTask;
     process.exit();

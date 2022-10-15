@@ -19,6 +19,7 @@ Let me know if you encounter any issues and feel free to open an issue or submit
 ## Features
 
 - Download episodes from a feed URL with flexible selections: earliest, latest, range, or all episodes
+- Subscribe to feeds and continously download new episodes
 - Download future-safe shownotes that are not susceptible to dead links. They are formatted as HTML but also contain the raw episode data for completeness.
 - Search and find the feed URL from a show name
 - List episodes from a feed URL
@@ -39,7 +40,7 @@ Let me know if you encounter any issues and feel free to open an issue or submit
 
 4. Verify that it works! 
 
-`poddy --help`
+`poddy --version`
 
 ## Examples
 
@@ -67,11 +68,13 @@ Download first episode from a feed:
 
 `poddy download --url "https://feeds.fireside.fm/selfhosted/rss" --directory "~/podcasts" --episodes 1`
 
-
 Download a range of episodes from a feed:
 
 `poddy download --url "https://feeds.fireside.fm/selfhosted/rss" --directory "~/podcasts" --episodes 10-15`
 
+Subscribe to two feeds and continously download episodes and shownotes every 20 minutes:
+
+`poddy subscribe --urls "https://feeds.fireside.fm/selfhosted/rss" "https://feeds.megaphone.fm/darknetdiaries" --interval 1200 --directory ~/podcasts --shownotes`
 ## Limitations
 
 - Output formatting is very basic

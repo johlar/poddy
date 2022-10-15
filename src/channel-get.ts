@@ -3,7 +3,7 @@ import { xml2json } from 'xml-js';
 import { IEpisode, IChannel } from "./models";
 
 const parseEpisode = (feedItem: any): IEpisode => {
-    const description = feedItem.description._cdata ?? feedItem['itunes:summary']?._text ?? "";
+    const description = feedItem['itunes:summary']?._text ?? feedItem.description?._cdata ?? feedItem.description?._text ?? "";
     const sizeMb = (feedItem.enclosure._attributes.length / 1024 / 1024).toFixed(1);
     const episodeNo = parseInt(feedItem['itunes:episode']?._text, 10);
     return {
