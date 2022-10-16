@@ -49,6 +49,23 @@ const parseDirectory = (directory: string): string => {
     return directory;
 }
 
+const parseUrl = (url: string) => {
+    try {
+        new URL(url);
+        return url;
+    } catch (_) {
+        throw new InvalidArgumentError("URL is invalid.");
+    }
+}
+
+const parseUrls = (url: string, previous: Array<string>): Array<string> => {
+    parseUrl(url);
+    if (previous.includes(url)) {
+        throw new InvalidArgumentError("URLs should be unique");
+    }
+    return [...previous, url]
+}
+
 const printProgress = (downloaded: number, total: number): void => {
     if (downloaded <= total) {
         const progress = (downloaded / total * 100).toFixed(1);
@@ -85,7 +102,7 @@ program.command('search')
 
 program.command('list')
     .description('display episode list')
-    .requiredOption('-u, --url <url>', 'url to podcast feed')
+    .requiredOption('-u, --url <url>', 'url to podcast feed', parseUrl)
     .action(async (options) => {
         try {
             const episodes = (await getChannel(options.url)).episodes;
@@ -105,7 +122,7 @@ program.command('list')
 
 program.command('download')
     .description('download episodes from a feed')
-    .requiredOption('-u, --url <url>', 'url to podcast feed')
+    .requiredOption('-u, --url <url>', 'url to podcast feed', parseUrl)
     .requiredOption('-d, --directory <directory>', 'destination of downloads', parseDirectory)
     .option('-e, --episodes <number|range>', 'podcasts to download', parseEpisodeRange)
     .option('-s, --shownotes', 'should include shownotes')
@@ -137,9 +154,9 @@ program.command('download')
 
 program.command('subscribe')
     .description('continously download episodes from a feed')
-    .requiredOption('-u, --urls [urls...]', 'url(s) to podcast feed(s)')
+    .requiredOption('-u, --urls [urls...]', 'url(s) to podcast feed(s)', parseUrls, [])
     .requiredOption('-d, --directory <directory>', 'destination of downloads', parseDirectory)
-    .option('-i, --interval', 'interval between feed checks (seconds)', '600')
+    .option('-i, --interval <interval>', 'interval between feed checks (seconds)', '600')
     .option('-s, --shownotes', 'should include shownotes')
     .action(async (options) => {
         try {
@@ -149,11 +166,13 @@ program.command('subscribe')
 
             do {
                 console.log(`Checking ${options.urls.length} channel subscription(s)...`);
-                for (let i = 0; i < options.urls.length; i++) {
-                    const channel = await getChannel(options.urls[i])
-                    currentTask = downloadEpisodes(channel, 1, channel.episodes.length + 1, options.directory, options.shownotes, signal);
-                    await currentTask;
-                }
+                const subscriptions = options.urls.map(async (url: string) => {
+                    const channel = await getChannel(url);
+                    return downloadEpisodes(channel, 1, channel.episodes.length + 1, options.directory, options.shownotes, signal);
+                });
+                currentTask = Promise.allSettled(subscriptions);
+                await currentTask;
+
                 console.log(`Waiting ${interval} seconds before checking again...`)
                 await delay(interval)
             } while (!signal.aborted)
