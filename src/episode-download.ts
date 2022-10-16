@@ -6,16 +6,6 @@ import { saveShownotes } from "./episode-shownotes";
 import { IChannel, IEpisode, Metadata } from "./models"
 import { APP_VERSION } from './version';
 
-const printProgress = (chunk: any, downloaded: number, total: number): void => {
-    if (chunk.length + downloaded <= total) {
-        const progress = ((chunk.length + downloaded) / total * 100).toFixed(1);
-        const totalMb = ((total) / 1024 / 1024).toFixed(2);
-        process.stdout.clearLine(0)
-        process.stdout.write(`Progress: ${progress}% of ${totalMb} MB`);
-        process.stdout.cursorTo(0);
-    }
-}
-
 const fileExtension = (url: string): string => {
     const resource = url.substring(url.lastIndexOf("/") + 1);
     const hasQueryParams = resource.lastIndexOf("?") != -1
@@ -68,7 +58,12 @@ const markAsDownloaded = (episode: IEpisode, what: Array<"enclosure" | "shownote
     return metadata;
 }
 
-const downloadEpisode = async (episode: IEpisode, fullPath: string, signal: AbortSignal): Promise<void> => {
+const downloadEpisode = async (
+    episode: IEpisode,
+    fullPath: string,
+    signal: AbortSignal,
+    onProgress?: (bytesNow: number, bytesTotal: number, episode: IEpisode) => void,
+): Promise<void> => {
     return new Promise((resolve, reject) => {
         if (fs.existsSync(fullPath)) {
             return reject(`Skipped episode because file already exists: '${fullPath}'`)
@@ -97,7 +92,7 @@ const downloadEpisode = async (episode: IEpisode, fullPath: string, signal: Abor
                         return reject("Aborted on received data")
                     }
                     downloadedBytes = chunk.length + downloadedBytes;
-                    printProgress(chunk, downloadedBytes, totalBytes)
+                    onProgress && onProgress(downloadedBytes, totalBytes, episode);
                 });
                 data.on('error', (err: any) => {
                     abort("Error in stream: " + err?.message);
@@ -123,7 +118,8 @@ const downloadEpisodes = async (
     lastEpisodeNbr: number,
     rootDirectory: string,
     includeShownotes: boolean,
-    signal: AbortSignal
+    signal: AbortSignal,
+    onProgress?: (bytesNow: number, bytesTotal: number, episode: IEpisode) => void,
 ): Promise<void> => {
     const channelDirectory = path.resolve(rootDirectory, channel.title);
     // create folder if it does not exist
@@ -140,7 +136,7 @@ const downloadEpisodes = async (
         const fileName = `${episode.pubDate.toISOString().split('T')[0]} - ${episode.title}`;
         if (!isDownloaded("enclosure", episode.guid, metadata)) {
             const fullPath = path.resolve(channelDirectory, `${fileName}.${fileExtension(episode.url)}`);
-            tasks.push({ what: "enclosure", func: () => downloadEpisode(episode, fullPath, signal) })
+            tasks.push({ what: "enclosure", func: () => downloadEpisode(episode, fullPath, signal, onProgress) })
         }
         if (includeShownotes && !isDownloaded("shownotes", episode.guid, metadata)) {
             const fullPath = path.resolve(channelDirectory, `${fileName}.html`)
@@ -148,21 +144,22 @@ const downloadEpisodes = async (
         }
 
         if (tasks.length > 0) {
-            console.log(`Downloading: ${episode.title} (${tasks.map(task => task.what).join(", ")})`);
+            console.log(`Starting download: ${episode.title} (${tasks.map(task => task.what).join(", ")})`);
+
+            const resolvedTasks: Array<"enclosure" | "shownotes"> = [];
+            await Promise.allSettled(tasks.map(task => task.func()))
+                .then(results => {
+                    results.forEach((result, i) => {
+                        if (result.status == "fulfilled") {
+                            resolvedTasks.push(tasks[i].what);
+                        }
+                    })
+                });
+
+            console.log(`Completed download: ${episode.title} (${resolvedTasks.join(", ")})`);
+            metadata = markAsDownloaded(episode, resolvedTasks, metadata)
+            await persistMetadata(metadata, channelDirectory);
         }
-
-        const resolvedTasks: Array<"enclosure" | "shownotes"> = [];
-        await Promise.allSettled(tasks.map(task => task.func()))
-            .then(results => {
-                results.forEach((result, i) => {
-                    if (result.status == "fulfilled") {
-                        resolvedTasks.push(tasks[i].what);
-                    }
-                })
-            })
-
-        metadata = markAsDownloaded(episode, resolvedTasks, metadata)
-        await persistMetadata(metadata, channelDirectory);
     }
 }
 

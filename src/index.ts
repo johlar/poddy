@@ -49,6 +49,16 @@ const parseDirectory = (directory: string): string => {
     return directory;
 }
 
+const printProgress = (downloaded: number, total: number): void => {
+    if (downloaded <= total) {
+        const progress = (downloaded / total * 100).toFixed(1);
+        const totalMb = ((total) / 1024 / 1024).toFixed(2);
+        process.stdout.clearLine(0)
+        process.stdout.write(`Progress: ${progress}% of ${totalMb} MB`);
+        process.stdout.cursorTo(0);
+    }
+}
+
 program
     .name('Poddy')
     .description('CLI Podcast Downloader')
@@ -104,7 +114,7 @@ program.command('download')
         const channel = await getChannel(options.url)
         try {
             if (!options.episodes) {
-                currentTask = downloadEpisodes(channel, 1, channel.episodes.length + 1, options.directory, options.shownotes, signal);
+                currentTask = downloadEpisodes(channel, 1, channel.episodes.length + 1, options.directory, options.shownotes, signal, printProgress);
                 await currentTask;
             } else {
                 const isTakeLatest = options.episodes.to == undefined;
@@ -116,7 +126,7 @@ program.command('download')
                     ? channel.episodes.length
                     : options.episodes.to;
 
-                currentTask = downloadEpisodes(channel, firstEpisodeNbr, lastEpisodeNbr, options.directory, options.shownotes, signal);
+                currentTask = downloadEpisodes(channel, firstEpisodeNbr, lastEpisodeNbr, options.directory, options.shownotes, signal, printProgress);
                 await currentTask;
             }
         } catch (err: any) {
