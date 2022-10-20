@@ -9,12 +9,15 @@ I originally made Poddy for my own use to help me archive my favorite podcasts. 
 Let me know if you encounter any issues and feel free to open an issue or submit a PR.
 
 ## Table of Contents
-- [Features](#features)
-- [Installing](#installing)
-- [Examples](#examples)
-- [Limitations](#limitations)
-- [Uninstalling](#uninstalling)
-- [Development](#development)
++ [Features](#features)
++ [Installing](#installing)
++ [Examples](#examples)
++ [Configuration](#configuration)
+    + [config.json](#configjson)
+    + [subscriptions.json](#subscriptionsjson)
++ [Limitations](#limitations)
++ [Uninstalling](#uninstalling)
++ [Development](#development)
 
 ## Features
 
@@ -25,56 +28,101 @@ Let me know if you encounter any issues and feel free to open an issue or submit
 - List episodes from a feed URL
 
 ## Installing
+```sh
+# 1. Clone this repo
+git clone https://github.com/johlar/poddy.git
 
-1. Clone this repo
+# 2. Install, build and package the application
+cd poddy && npm install && npm package
 
-`git clone https://github.com/johlar/poddy.git`
+# 3. Make it available in your shell 
+npm link
 
-2. Install, build and package the application
+# 4. Verify that it works! 
+poddy --version
+```
 
-`cd poddy && npm install && npm package`
-
-3. Make it available in your shell
-
-`npm link`
-
-4. Verify that it works! 
-
-`poddy --version`
+When running Poddy for the first time, a configuration file and subscriptions file will be generated for you. See [Configuration](#subscriptions).
 
 ## Examples
 
-Show all available commands:
+Show all available commands
+```
+poddy --help
+```
 
-`poddy --help`
+Find a feed to download from
+```
+poddy search --name "Self-Hosted"
+```
 
-Find a feed to download from:
-
-`poddy search --name "Self-Hosted"`
-
-Download all episodes from a feed:
-
-`poddy download --url "https://feeds.fireside.fm/selfhosted/rss" --directory "~/podcasts"`
-
-Download all episodes from a feed including shownotes:
-
-`poddy download --url "https://feeds.fireside.fm/selfhosted/rss" --directory "~/podcasts" --shownotes`
+Download all episodes from a feed
+```
+poddy download --url "https://example.com/rss"
+```
 
 Download 5 latest episodes from a feed
+```
+poddy download --url "https://example.com/rss" --episodes -5
+```
 
-`poddy download --url "https://feeds.fireside.fm/selfhosted/rss" --directory "~/podcasts" --episodes -5`
+Download the earliest 2 episodes from a feed
+```
+poddy download --url "https://example.com/rss" --episodes 2
+```
 
-Download first episode from a feed:
+Download a range of episodes from a feed
+```
+poddy download --url "https://example.com/rss" --episodes 10-15
+```
 
-`poddy download --url "https://feeds.fireside.fm/selfhosted/rss" --directory "~/podcasts" --episodes 1`
+Subscribe to two feeds and continously download episodes. However using [subscriptions.json](#subscriptionsjson) is recommended for convenience and versatility.
+```
+poddy subscribe --urls "https://example1.com/rss" "https://example2.com/rss"
+```
 
-Download a range of episodes from a feed:
+## Configuration
 
-`poddy download --url "https://feeds.fireside.fm/selfhosted/rss" --directory "~/podcasts" --episodes 10-15`
+Poddy uses two configuration files: `config.json` and `subscriptions.json`. By default they will be in `~/.config/poddy/`. This location can be overridden with the environment variables _PODDY_CONFIG_FILE_ and _PODDY_SUBSCRIPTIONS_FILE_.
 
-Subscribe to two feeds and continously download episodes and shownotes every 20 minutes:
+### config.json
+The properties in config.json will be used if no corresponding CLI arguments are passed.
 
-`poddy subscribe --urls "https://feeds.fireside.fm/selfhosted/rss" "https://feeds.megaphone.fm/darknetdiaries" --interval 1200 --directory ~/podcasts --shownotes`
+Example:
+```json
+{
+  "downloadDirectory": "/Users/me/Podcasts",
+  "includeShownotes": true
+}
+```
+
+### subscriptions.json
+
+You can use subscriptions.json to configure your podcast subscriptions, and then simply run `poddy subscribe` in your terminal.
+
+For each subscription object:
+
+`url` property is **required** and should be the podcast feed URL. To find a feed URL, you can use `poddy search --name "the podcast name"`.
+
+`interval` is optional and decides the number of seconds beteween each feed refresh. Default: 600.
+
+`includeShownotes` is optional and decides whether to download the shownotes. If not set, the value must be set in config.json or passed as a CLI argument. 
+
+Example: 
+```json
+{
+    "subscriptions": [
+        {
+            "url": "https://example1.com/rss",
+        },
+        {
+            "url": "https://example2.com/rss",
+            "interval": 7200,
+            "includeShownotes": false
+        }
+    ]
+}
+```
 ## Limitations
 
 - Output formatting is very basic
@@ -86,4 +134,4 @@ Removing Poddy is super simple. Just delete the downloaded repository and then r
 
 ## Development
 
-When passing arguments in local development, don't forget the separator (e.g. `npm run start -- search --name "some podcast"`).
+When passing arguments in local development, don't forget the separator (e.g. `npm run start -- search --name "some podcast"`). Local gitignored configuration files for development will be generated in the base directory on the first run.
