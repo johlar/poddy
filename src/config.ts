@@ -59,14 +59,14 @@ const readConfigs = (): { config: IConfig, subscriptions: ISubscriptionConfig } 
 
     if (process.env.PODDY_CONFIG_FILE) {
         console.log(`Environment variable 'PODDY_CONFIG_FILE' set, looking for configuration file: ${process.env.PODDY_CONFIG_FILE}`)
-        config = readConfig(process.env.PODDY_CONFIG_FILE as string, false);
+        config = readConfig(process.env.PODDY_CONFIG_FILE as string, true);
     } else {
         config = readConfig(path.join(process.env.HOME as string, "/.config/poddy/config.json"), true)
     }
 
     if (process.env.PODDY_SUBSCRIPTIONS_FILE) {
         console.log(`Environment variable 'PODDY_SUBSCRIPTIONS_FILE' set, looking for subscriptions file: ${process.env.PODDY_CONFIG_FILE}`)
-        subscriptions = readSubscriptions(process.env.PODDY_SUBSCRIPTIONS_FILE as string, false);
+        subscriptions = readSubscriptions(process.env.PODDY_SUBSCRIPTIONS_FILE as string, true);
     } else {
         subscriptions = readSubscriptions(path.join(process.env.HOME as string, "/.config/poddy/subscriptions.json"), true)
     }

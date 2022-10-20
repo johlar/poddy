@@ -38,22 +38,22 @@ const isDownloaded = (what: "enclosure" | "shownotes", guid: string, metadata: M
     return !!metadata.episodes[guid]?.[what]
 }
 
-const markAsDownloaded = (episode: IEpisode, what: Array<"enclosure" | "shownotes">, oldMetadata: Metadata): Metadata => {
+const markAsDownloaded = (episode: IEpisode, what: Set<"enclosure" | "shownotes">, oldMetadata: Metadata): Metadata => {
     const metadata = { ...oldMetadata };
     const existingEntry = metadata.episodes[episode.guid];
 
     if (existingEntry) {
         metadata.episodes[episode.guid] = {
             ...existingEntry,
-            enclosure: what.includes('enclosure') || existingEntry.enclosure,
-            shownotes: what.includes('shownotes') || existingEntry.shownotes
+            enclosure: [...what].includes('enclosure') || existingEntry.enclosure,
+            shownotes: [...what].includes('shownotes') || existingEntry.shownotes
         }
         return metadata;
     }
     metadata.episodes[episode.guid] = {
         title: episode.title,
-        enclosure: what.includes('enclosure'),
-        shownotes: what.includes('shownotes')
+        enclosure: [...what].includes('enclosure'),
+        shownotes: [...what].includes('shownotes')
     }
     return metadata;
 }
@@ -146,17 +146,22 @@ const downloadEpisodes = async (
         if (tasks.length > 0) {
             console.log(`Starting download: ${episode.title} (${tasks.map(task => task.what).join(", ")})`);
 
-            const resolvedTasks: Array<"enclosure" | "shownotes"> = [];
+            const resolvedTasks: Set<"enclosure" | "shownotes"> = new Set();
+            const errors: Map<"enclosure" | "shownotes", string> = new Map();
             await Promise.allSettled(tasks.map(task => task.func()))
                 .then(results => {
                     results.forEach((result, i) => {
                         if (result.status == "fulfilled") {
-                            resolvedTasks.push(tasks[i].what);
+                            resolvedTasks.add(tasks[i].what);
+                        } else {
+                            errors.set(tasks[i].what, result.reason)
                         }
                     })
                 });
 
-            console.log(`Completed download: ${episode.title} (${resolvedTasks.join(", ")})`);
+            const resolvedTasksMsg = resolvedTasks.size == 0 ? "" : `(${[...resolvedTasks].join(", ")})`;
+            const errorMsg = errors.size == 0 ? "" : `(${[...errors].map(e => `${e[0]}: ${e[1]}`).join(", ")})`;
+            console.log(`Finished: ${episode.title} ${resolvedTasksMsg} ${errorMsg}`);
             metadata = markAsDownloaded(episode, resolvedTasks, metadata)
             await persistMetadata(metadata, channelDirectory);
         }

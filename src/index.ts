@@ -6,6 +6,10 @@ import { IEpisode, IChannelSearchResult } from "./models"
 import * as fs from 'fs';
 import * as path from "path";
 import { APP_VERSION } from './version';
+import { readConfigs } from './config';
+import { subscribe, ISubscription } from './channels-subscribe';
+
+const configs = readConfigs();
 
 const abortController = new AbortController();
 let currentTask: Promise<any> | undefined;
@@ -39,7 +43,10 @@ const parseEpisodeRange = (input: string): { from: number, to?: number } => {
     throw new InvalidArgumentError(ERR_MSG);
 }
 
-const parseDirectory = (directory: string): string => {
+const parseDirectory = (directory?: string): string => {
+    if (!directory) {
+        throw new InvalidArgumentError(`Directory is undefined`);
+    }
     if (directory.startsWith('~') && process.env.HOME) {
         directory = path.join(process.env.HOME, directory.slice(1));
     }
@@ -64,6 +71,13 @@ const parseUrls = (url: string, previous: Array<string>): Array<string> => {
         throw new InvalidArgumentError("URLs should be unique");
     }
     return [...previous, url]
+}
+
+const assertPresent = (val: any, argName: string) => {
+    if (val === undefined) {
+        throw new InvalidArgumentError(`argument '${argName}' is missing`)
+    }
+    return val;
 }
 
 const printProgress = (downloaded: number, total: number): void => {
@@ -123,15 +137,18 @@ program.command('list')
 program.command('download')
     .description('download episodes from a feed')
     .requiredOption('-u, --url <url>', 'url to podcast feed', parseUrl)
-    .requiredOption('-d, --directory <directory>', 'destination of downloads', parseDirectory)
     .option('-e, --episodes <number|range>', 'podcasts to download', parseEpisodeRange)
+    .option('-d, --directory <directory>', 'destination of downloads', parseDirectory)
     .option('-s, --shownotes', 'should include shownotes')
     .action(async (options) => {
-        const { signal } = abortController;
-        const channel = await getChannel(options.url)
+        const directory = options.directory ?? parseDirectory(configs.config.downloadDirectory)
+        const includeShownotes = options.shownotes ?? configs.config.includeShownotes;
+        assertPresent(includeShownotes, 'includeShownotes')
+
+        const channel = await getChannel(options.url);
         try {
             if (!options.episodes) {
-                currentTask = downloadEpisodes(channel, 1, channel.episodes.length + 1, options.directory, options.shownotes, signal, printProgress);
+                currentTask = downloadEpisodes(channel, 1, channel.episodes.length + 1, directory, includeShownotes, abortController.signal, printProgress);
                 await currentTask;
             } else {
                 const isTakeLatest = options.episodes.to == undefined;
@@ -143,7 +160,7 @@ program.command('download')
                     ? channel.episodes.length
                     : options.episodes.to;
 
-                currentTask = downloadEpisodes(channel, firstEpisodeNbr, lastEpisodeNbr, options.directory, options.shownotes, signal, printProgress);
+                currentTask = downloadEpisodes(channel, firstEpisodeNbr, lastEpisodeNbr, directory, includeShownotes, abortController.signal, printProgress);
                 await currentTask;
             }
         } catch (err: any) {
@@ -151,31 +168,34 @@ program.command('download')
         }
     });
 
-
 program.command('subscribe')
     .description('continously download episodes from a feed')
-    .requiredOption('-u, --urls [urls...]', 'url(s) to podcast feed(s)', parseUrls, [])
-    .requiredOption('-d, --directory <directory>', 'destination of downloads', parseDirectory)
+    .option('-u, --urls [urls...]', 'url(s) to podcast feed(s)', parseUrls, [])
     .option('-i, --interval <interval>', 'interval between feed checks (seconds)', '600')
+    .option('-d, --directory <directory>', 'destination of downloads', parseDirectory)
     .option('-s, --shownotes', 'should include shownotes')
     .action(async (options) => {
+        const directory: string = options.directory ?? parseDirectory(configs.config.downloadDirectory)
+        // undefined is allowed (if instead set through subscriptions conf), so assert on use
+        const defaultIncludeShownotes: boolean | undefined = options.shownotes ?? configs.config.includeShownotes;
+        const defaultInterval: number = parseInt(options.interval, 10);
+
+        const subscriptions: Array<ISubscription> = options.urls.length > 0
+            ? options.urls.map((url: string) => ({
+                url: url,
+                interval: defaultInterval,
+                includeShownotes: assertPresent(defaultIncludeShownotes, 'includeShownotes')
+            }))
+            : configs.subscriptions.subscriptions.map(configured => ({
+                url: configured.url,
+                interval: configured.interval ?? defaultInterval,
+                includeShownotes: configured.includeShownotes ?? assertPresent(defaultIncludeShownotes, 'includeShownotes')
+            }));
+
         try {
-            const { signal } = abortController;
-            const interval = parseInt(options.interval, 10);
-            const delay = (seconds: number) => new Promise(resolve => setTimeout(resolve, seconds * 1000))
-
-            do {
-                console.log(`Checking ${options.urls.length} channel subscription(s)...`);
-                const subscriptions = options.urls.map(async (url: string) => {
-                    const channel = await getChannel(url);
-                    return downloadEpisodes(channel, 1, channel.episodes.length + 1, options.directory, options.shownotes, signal);
-                });
-                currentTask = Promise.allSettled(subscriptions);
-                await currentTask;
-
-                console.log(`Waiting ${interval} seconds before checking again...`)
-                await delay(interval)
-            } while (!signal.aborted)
+            console.log(`Subscribing to ${subscriptions.length} channels`)
+            currentTask = subscribe(subscriptions, directory, abortController.signal)
+            await currentTask;
         } catch (err: any) {
             console.error("ERROR: " + err?.message);
         }
