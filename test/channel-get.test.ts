@@ -14,7 +14,7 @@ const getXmlForItem = (text: string, guid: string) => {
     const xml = new DOMParser().parseFromString(text);
     const items = xml.getElementsByTagName("item");
     for (let i = 0; i < items.length; i++) {
-        if(items[i].getElementsByTagName("guid")[0]?.textContent === guid){
+        if (items[i].getElementsByTagName("guid")[0]?.textContent === guid) {
             return items[i].toString();
         }
     }
@@ -27,7 +27,16 @@ const getXmlForChannel = (text: string) => {
 
     const items = docCopy.getElementsByTagName("item")
     for (let i = 0; i < items.length; i++) {
-        docCopy.removeChild(items[i])
+        const item = items[i];
+        let sibling = items[i].previousSibling
+        // removes actual item
+        docCopy.removeChild(item)
+        // remove whitespaces before the item, because they are also valid nodes
+        while (sibling?.nodeValue?.trim() === "") {
+            const toBeRemoved = sibling;
+            sibling = sibling.previousSibling;
+            docCopy.removeChild(toBeRemoved);
+        }
     }
     return docCopy.toString();
 }

@@ -66,22 +66,42 @@ const createHtml = async (episode: IEpisode, channel: IChannel): Promise<string>
                             <div class="py-2">
                                 <p>${episode.description}</p>
                             </div>
-                            <button type="button" class="btn btn-outline-secondary float-end" data-bs-toggle="modal" data-bs-target="#rawDataModal">
-                                Details
+                            <button type="button" class="btn btn-outline-secondary float-end mx-4" data-bs-toggle="modal" data-bs-target="#rawChannelModal">
+                                Channel Details
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary float-end" data-bs-toggle="modal" data-bs-target="#rawEpisodeModal">
+                                Episode Details
                             </button>
                         </div>
                     </div>
                 </div>
-                <!-- Modal -->
-                <div class="modal fade" id="rawDataModal" tabindex="-1" aria-labelledby="rawDataModalLabel" aria-hidden="true">
+                <!-- Raw Episode Modal -->
+                <div class="modal fade" id="rawEpisodeModal" tabindex="-1" aria-labelledby="rawEpisodeModalLabel" aria-hidden="true">
                     <div class="modal-dialog modal-xl">
                         <div class="modal-content">
                             <div class="modal-header">
-                                <h1 class="modal-title fs-5" id="rawDataModalLabel">${he.encode(episode.title)}</h1>
+                                <h1 class="modal-title fs-5" id="rawEpisodeModalLabel">${he.encode(episode.title)}</h1>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
                                 <pre class="py-2">${he.escape(episode.raw)}</pre>
+                            </div>
+                            <div class="modal-footer text-muted">
+                                Generated at ${new Date(Date.now()).toISOString()} with <a href="https://github.com/johlar/poddy" target="_blank">Poddy ${APP_VERSION}</a>
+                            </div>                    
+                        </div>
+                    </div>
+                </div>
+                <!-- Raw Channel Modal -->
+                <div class="modal fade" id="rawChannelModal" tabindex="-1" aria-labelledby="rawChannelModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-xl">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h1 class="modal-title fs-5" id="rawChannelModalLabel">${he.encode(channel.title)}</h1>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <pre class="py-2">${he.escape(channel.raw)}</pre>
                             </div>
                             <div class="modal-footer text-muted">
                                 Generated at ${new Date(Date.now()).toISOString()} with <a href="https://github.com/johlar/poddy" target="_blank">Poddy ${APP_VERSION}</a>
