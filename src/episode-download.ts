@@ -122,8 +122,11 @@ const downloadEpisodes = async (
     onProgress?: (bytesNow: number, bytesTotal: number, episode: IEpisode) => void,
 ): Promise<void> => {
     const channelDirectory = path.resolve(rootDirectory, channel.title);
-    // create folder if it does not exist
+    const shownotesDirectory = path.join(channelDirectory + "/shownotes");
+    // create folders if required
     await fsAsync.mkdir(channelDirectory, { recursive: true })
+    includeShownotes && await fsAsync.mkdir(shownotesDirectory, { recursive: true })
+    
     let metadata = await getOrInitMetadata(channelDirectory);
 
     const toDownload = channel.episodes
@@ -139,8 +142,8 @@ const downloadEpisodes = async (
             tasks.push({ what: "enclosure", func: () => downloadEpisode(episode, fullPath, signal, onProgress) })
         }
         if (includeShownotes && !isDownloaded("shownotes", episode.guid, metadata)) {
-            const fullPath = path.resolve(channelDirectory, `${fileName}.html`)
-            tasks.push({ what: "shownotes", func: () => saveShownotes(episode, fullPath) })
+            const fullPath = path.resolve(shownotesDirectory, `${fileName}.html`)
+            tasks.push({ what: "shownotes", func: () => saveShownotes(episode, channel, fullPath) })
         }
 
         if (tasks.length > 0) {

@@ -28,12 +28,13 @@ interface IEpisode {
     url: string,
     episodeNo?: number
     description: string,
-    imageUrl: string,
+    imageUrl?: string,
     raw: string
 }
 
 interface IChannel {
     episodes: Array<IEpisode>
+    imageUrl?: string
     title: string
     raw: any
 }

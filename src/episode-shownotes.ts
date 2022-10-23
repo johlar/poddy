@@ -1,4 +1,4 @@
-import { IEpisode } from "./models";
+import { IChannel, IEpisode } from "./models";
 import * as fs from "fs";
 import * as fsAsync from "fs/promises";
 import * as he from 'he';
@@ -29,13 +29,15 @@ const base64Data = async (imageUrl: string): Promise<string> => {
     return "";
 }
 
-const createHtml = async (episode: IEpisode): Promise<string> => {
+const createHtml = async (episode: IEpisode, channel: IChannel): Promise<string> => {
     const propertyHtml = (property: any, svgUrl: string) => {
         if (!property) { return ""; }
         return `<span class="d-inline-block"><object class="px-2" data="${svgUrl}" type="image/svg+xml"></object>${he.encode(property.toString())}</span>`
     }
     // download image to be immune to dying links
-    const image = await base64Data(episode.imageUrl);
+    let image = "";
+    if (episode.imageUrl) { image = await base64Data(episode.imageUrl) }
+    if (channel.imageUrl) { image = await base64Data(channel.imageUrl) }
 
     return `
         <!doctype html>
@@ -50,10 +52,10 @@ const createHtml = async (episode: IEpisode): Promise<string> => {
             <body>
                 <div class="container">
                     <div class="row justify-content-md-center py-4">
-                        <div class="col-auto pb-2">
-                            ${image == "" ? "" : `<img alt="${episode.title}" src="${image}" height="100" class="rounded"></img>`}
+                        <div class="col-md-auto pb-2 mt-2">
+                            ${image == "" ? "" : `<img alt="${episode.title}" src="${image}" height="200" class="rounded mx-auto d-block"></img>`}
                         </div>
-                        <div class="col-auto">
+                        <div class="col-auto col-md-6">
                             <h1>${he.encode(episode.title)}</h1>
                             <div class="pb-2">
                                 ${propertyHtml(episode.pubDate?.toDateString(), "https://icons.getbootstrap.com/assets/icons/calendar.svg")}
@@ -79,10 +81,10 @@ const createHtml = async (episode: IEpisode): Promise<string> => {
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
-                                <pre class="py-2">${he.encode(episode.raw)}</pre>
+                                <pre class="py-2">${he.escape(episode.raw)}</pre>
                             </div>
                             <div class="modal-footer text-muted">
-                                <a href="https://github.com/johlar/poddy" target="_blank">Poddy ${APP_VERSION}</a>
+                                Generated at ${new Date(Date.now()).toISOString()} with <a href="https://github.com/johlar/poddy" target="_blank">Poddy ${APP_VERSION}</a>
                             </div>                    
                         </div>
                     </div>
@@ -94,12 +96,12 @@ const createHtml = async (episode: IEpisode): Promise<string> => {
         </html>`
 }
 
-const saveShownotes = async (episode: IEpisode, fullPath: string): Promise<void> => {
+const saveShownotes = async (episode: IEpisode, channel: IChannel, fullPath: string): Promise<void> => {
     if (fs.existsSync(fullPath)) {
         return Promise.reject(`File already exist at ${fullPath}`);
     }
     try {
-        return await fsAsync.writeFile(fullPath, await createHtml(episode));
+        return await fsAsync.writeFile(fullPath, await createHtml(episode, channel));
     } catch (err: any) {
         console.error(err);
         return Promise.reject(err.message);
