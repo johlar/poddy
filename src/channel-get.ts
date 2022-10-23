@@ -1,45 +1,61 @@
 import axios from 'axios';
-import { xml2json } from 'xml-js';
-import { IEpisode, IChannel } from "./models";
+import { IChannel } from "./models";
+import { DOMParser } from '@xmldom/xmldom';
 
-const parseEpisode = (feedItem: any): IEpisode => {
-    const description = feedItem['itunes:summary']?._text ?? feedItem.description?._cdata ?? feedItem.description?._text ?? "";
-    const sizeMb = (feedItem.enclosure._attributes.length / 1024 / 1024).toFixed(1);
-    const episodeNo = parseInt(feedItem['itunes:episode']?._text, 10);
-    return {
-        title: (feedItem.title._cdata ?? feedItem.title?._text ?? "").trim(),
-        pubDate: new Date(Date.parse(feedItem.pubDate._text)),
-        guid: feedItem.guid?._cdata ?? feedItem.guid._text,
-        duration: feedItem['itunes:duration']?._text,
-        size: `${sizeMb} MB`,
-        url: feedItem.enclosure._attributes.url,
-        episodeNo: !isNaN(episodeNo) ? episodeNo : undefined,
-        description,
-        imageUrl: feedItem['itunes:image']?._attributes.href,
-        raw: JSON.stringify(feedItem, null, 2)
+const channelXmlWithoutEpisodes = (doc: Document) => {
+    const docCopy = doc.cloneNode(true) as Document;
+
+    const items = docCopy.getElementsByTagName("item")
+    for (let i = 0; i < items.length; i++) {
+        docCopy.removeChild(items[i])
     }
+    return docCopy.toString();
+}
+const toArray = (anything: any) => {
+    const res = [];
+    for (let i = 0; i < anything.length; i++) {
+        res.push(anything[i]);
+    }
+    return res;
 }
 
-const parseChannel = (json: any): IChannel => {
-    const feedItems = json.rss.channel.item;
-    const channel = json.rss.channel;
+const parseChannel = (doc: Document): IChannel => {
+    return {
+        title: (doc.getElementsByTagName("title")[0]?.textContent ?? "").trim(),
+        raw: channelXmlWithoutEpisodes(doc),
+        imageUrl: doc.getElementsByTagName("itunes:image")[0]?.getAttribute("href") || undefined,
+        episodes: toArray(doc.getElementsByTagName("item"))
+            .filter((item: any) => item.getElementsByTagName("enclosure").length > 0) // remove items which are not podcasts, like ads/promos
+            .map((item: any) => {
+                const contentEncoded = item.getElementsByTagName("content:encoded")[0]?.textContent ?? "";
+                const summary = item.getElementsByTagName("itunes:summary")[0]?.textContent ?? "";
 
-    if (feedItems instanceof Array) {
-        const episodes = feedItems
-            .filter((feedItem: any) => undefined != feedItem.enclosure) // remove items which are not podcasts, like ads/promos
-            .map(parseEpisode)
-            .reverse(); // make into chronological order
-        return { title: (channel.title?._cdata ?? channel?.title?._text ?? "").trim(), raw: channel, episodes };
-    } else {
-        return { title: (channel.title?._cdata ?? channel?.title?._text ?? "").trim(), raw: channel, episodes: [parseEpisode(feedItems)] };
-    }
+                const description: string = (contentEncoded ?? summary).trim();
+                const sizeMb: string = (parseInt(item.getElementsByTagName("enclosure")[0].getAttribute("length")) / 1024 / 1024).toFixed(1);
+                const episodeNo: number | undefined = parseInt(item.getElementsByTagName("itunes:episode")[0]?.textContent || "", 10) || undefined;
+                return {
+                    title: (item.getElementsByTagName("title")[0]?.textContent ?? "").trim(),
+                    pubDate: new Date(Date.parse(item.getElementsByTagName("pubDate")[0]?.textContent)),
+                    guid: item.getElementsByTagName("guid")[0]?.textContent,
+                    duration: item.getElementsByTagName("itunes:duration")[0]?.textContent,
+                    size: `${sizeMb} MB`,
+                    url: item.getElementsByTagName("enclosure")[0]?.getAttribute('url'),
+                    episodeNo: episodeNo,
+                    description: description,
+                    imageUrl: item.getElementsByTagName("itunes:image")[0]?.getAttribute('href'),
+                    raw: item.toString()
+                }
+            })
+            .reverse() // make into chronological order
+    };
 }
 
 const getChannel = async (feedUrl: string): Promise<IChannel> => {
     const response = await axios.get(feedUrl);
-    const xml = response.data;
-    const json = JSON.parse(xml2json(xml, { compact: true }));
-    return parseChannel(json);
+    const text = response.data;
+    const doc = new DOMParser().parseFromString(text);
+
+    return parseChannel(doc);
 }
 
 export { getChannel };

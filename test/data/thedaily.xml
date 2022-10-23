@@ -1,0 +1,92 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:googleplay="http://www.google.com/schemas/play-podcasts/1.0" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd">
+  <channel>
+    <atom:link href="https://feeds.simplecast.com/54nAGcIl" rel="self" title="MP3 Audio" type="application/atom+xml"/>
+    <atom:link href="https://simplecast.superfeedr.com/" rel="hub" xmlns="http://www.w3.org/2005/Atom"/>
+    <generator>https://simplecast.com</generator>
+    <title>The Daily</title>
+    <description>This is what the news should sound like. The biggest stories of our time, told by the best journalists in the world. Hosted by Michael Barbaro and Sabrina Tavernise. Twenty minutes a day, five days a week, ready by 6 a.m.</description>
+    <copyright>© 2020-2021 THE NEW YORK TIMES COMPANY; The New York Times encourages the use of RSS feeds for personal use in a news reader or as part of a non-commercial blog, subject to your agreement to our Terms of Service.</copyright>
+    <language>en</language>
+    <pubDate>Sun, 23 Oct 2022 10:00:00 +0000</pubDate>
+    <lastBuildDate>Sun, 23 Oct 2022 10:00:31 +0000</lastBuildDate>
+    <image>
+      <link>https://www.nytimes.com/the-daily</link>
+      <title>The Daily</title>
+      <url>https://image.simplecastcdn.com/images/03d8b493-87fc-4bd1-931f-8a8e9b945d8a/2cce5659-f647-4366-b318-46e4b67afcfa/3000x3000/c81936f538106550b804e7e4fe2c236319bab7fba37941a6e8f7e5c3d3048b88fc5b2182fb790f7d446bdc820406456c94287f245db89d8656c105d5511ec3de.jpeg?aid=rss_feed</url>
+    </image>
+    <link>https://www.nytimes.com/the-daily</link>
+    <itunes:type>episodic</itunes:type>
+    <itunes:summary>This is what the news should sound like. The biggest stories of our time, told by the best journalists in the world. Hosted by Michael Barbaro and Sabrina Tavernise. Twenty minutes a day, five days a week, ready by 6 a.m.</itunes:summary>
+    <itunes:author>The New York Times</itunes:author>
+    <itunes:explicit>no</itunes:explicit>
+    <itunes:image href="https://image.simplecastcdn.com/images/03d8b493-87fc-4bd1-931f-8a8e9b945d8a/2cce5659-f647-4366-b318-46e4b67afcfa/3000x3000/c81936f538106550b804e7e4fe2c236319bab7fba37941a6e8f7e5c3d3048b88fc5b2182fb790f7d446bdc820406456c94287f245db89d8656c105d5511ec3de.jpeg?aid=rss_feed"/>
+    <itunes:new-feed-url>https://feeds.simplecast.com/54nAGcIl</itunes:new-feed-url>
+    <itunes:owner>
+      <itunes:name>The New York Times</itunes:name>
+      <itunes:email>thedaily@nytimes.com</itunes:email>
+    </itunes:owner>
+    <itunes:category text="News">
+      <itunes:category text="Daily News"/>
+    </itunes:category>
+    <item>
+      <guid isPermaLink="false">gid://art19-episode-locator/V0/1ft_DGtLLsokwij1HwsWsLEGxwVHdD_TZN8quEGB77Y</guid>
+      <title>Thursday, Feb. 2, 2017</title>
+      <description><![CDATA[<p>Who is influencing our new president’s views of Islam and radical Islamic terrorism? Are we seeing the beginning of a Tea Party for the Left? And why are its leaders looking to Republicans for inspiration? More on that — plus Beyoncé — on today’s show.</p>
+]]></description>
+      <pubDate>Thu, 2 Feb 2017 10:40:19 +0000</pubDate>
+      <author>thedaily@nytimes.com (The New York Times)</author>
+      <link>https://www.nytimes.com/the-daily</link>
+      <content:encoded><![CDATA[<p>Who is influencing our new president’s views of Islam and radical Islamic terrorism? Are we seeing the beginning of a Tea Party for the Left? And why are its leaders looking to Republicans for inspiration? More on that — plus Beyoncé — on today’s show.</p>
+]]></content:encoded>
+      <enclosure length="21596013" type="audio/mpeg" url="https://dts.podtrac.com/redirect.mp3/chrt.fm/track/8DB4DB/pdst.fm/e/nyt.simplecastaudio.com/03d8b493-87fc-4bd1-931f-8a8e9b945d8a/episodes/839ee63a-5016-45cf-9fa1-9357c8315c4d/audio/128/default.mp3?aid=rss_feed&amp;awCollectionId=03d8b493-87fc-4bd1-931f-8a8e9b945d8a&amp;awEpisodeId=839ee63a-5016-45cf-9fa1-9357c8315c4d&amp;feed=54nAGcIl"/>
+      <itunes:title>Thursday, Feb. 2, 2017</itunes:title>
+      <itunes:author>The New York Times</itunes:author>
+      <itunes:image href="https://image.simplecastcdn.com/images/03d8b4/03d8b493-87fc-4bd1-931f-8a8e9b945d8a/839ee63a-5016-45cf-9fa1-9357c8315c4d/3000x3000/c81936f538106550b804e7e4fe2c236319bab7fba37941a6e8f7e5c3d3048b88fc5b2182fb790f7d446bdc820406456c94287f245db89d8656c105d5511ec3de.jpeg?aid=rss_feed"/>
+      <itunes:duration>00:22:11</itunes:duration>
+      <itunes:summary>Who is influencing our new president’s views of Islam and radical Islamic terrorism? Are we seeing the beginning of a Tea Party for the Left? And why are its leaders looking to Republicans for inspiration? More on that — plus Beyoncé — on today’s show.</itunes:summary>
+      <itunes:subtitle>Who is influencing our new president’s views of Islam and radical Islamic terrorism? Are we seeing the beginning of a Tea Party for the Left? And why are its leaders looking to Republicans for inspiration? More on that — plus Beyoncé — on today’s show.</itunes:subtitle>
+      <itunes:explicit>no</itunes:explicit>
+      <itunes:episodeType>full</itunes:episodeType>
+    </item>
+    <item>
+      <guid isPermaLink="false">gid://art19-episode-locator/V0/8fJKNp6i648MNqY585bYwmeqWbklSt3qUuh0mzpMetA</guid>
+      <title>Wednesday, Feb. 1, 2017</title>
+      <description><![CDATA[<p>In a ceremony made for prime-time television, President Trump announced his Supreme Court nominee: Neil M. Gorsuch, a conservative judge with a sterling résumé. We spent the night at The New York Times talking with some of our most insightful colleagues about what the nomination means. We also get on the phone with the chief executive of Hobby Lobby, a company at the center of one of Judge Gorsuch’s most important cases.</p>
+]]></description>
+      <pubDate>Wed, 1 Feb 2017 10:18:28 +0000</pubDate>
+      <author>thedaily@nytimes.com (The New York Times)</author>
+      <link>https://www.nytimes.com/the-daily</link>
+      <content:encoded><![CDATA[<p>In a ceremony made for prime-time television, President Trump announced his Supreme Court nominee: Neil M. Gorsuch, a conservative judge with a sterling résumé. We spent the night at The New York Times talking with some of our most insightful colleagues about what the nomination means. We also get on the phone with the chief executive of Hobby Lobby, a company at the center of one of Judge Gorsuch’s most important cases.</p>
+]]></content:encoded>
+      <enclosure length="19070705" type="audio/mpeg" url="https://dts.podtrac.com/redirect.mp3/chrt.fm/track/8DB4DB/pdst.fm/e/nyt.simplecastaudio.com/03d8b493-87fc-4bd1-931f-8a8e9b945d8a/episodes/f658e83e-70d2-41a3-8e5c-507799a6cb69/audio/128/default.mp3?aid=rss_feed&amp;awCollectionId=03d8b493-87fc-4bd1-931f-8a8e9b945d8a&amp;awEpisodeId=f658e83e-70d2-41a3-8e5c-507799a6cb69&amp;feed=54nAGcIl"/>
+      <itunes:title>Wednesday, Feb. 1, 2017</itunes:title>
+      <itunes:author>The New York Times</itunes:author>
+      <itunes:image href="https://image.simplecastcdn.com/images/03d8b4/03d8b493-87fc-4bd1-931f-8a8e9b945d8a/f658e83e-70d2-41a3-8e5c-507799a6cb69/3000x3000/c81936f538106550b804e7e4fe2c236319bab7fba37941a6e8f7e5c3d3048b88fc5b2182fb790f7d446bdc820406456c94287f245db89d8656c105d5511ec3de.jpeg?aid=rss_feed"/>
+      <itunes:duration>00:19:33</itunes:duration>
+      <itunes:summary>In a ceremony made for prime-time television, President Trump announced his Supreme Court nominee: Neil M. Gorsuch, a conservative judge with a sterling résumé. We spent the night at The New York Times talking with some of our most insightful colleagues about what the nomination means. We also get on the phone with the chief executive of Hobby Lobby, a company at the center of one of Judge Gorsuch’s most important cases.</itunes:summary>
+      <itunes:subtitle>In a ceremony made for prime-time television, President Trump announced his Supreme Court nominee: Neil M. Gorsuch, a conservative judge with a sterling résumé. We spent the night at The New York Times talking with some of our most insightful colleagues about what the nomination means. We also get on the phone with the chief executive of Hobby Lobby, a company at the center of one of Judge Gorsuch’s most important cases.</itunes:subtitle>
+      <itunes:explicit>no</itunes:explicit>
+      <itunes:episodeType>full</itunes:episodeType>
+    </item>
+    <item>
+      <guid isPermaLink="false">gid://art19-episode-locator/V0/dBmW5PqKxnbikwBHJNneTyAG_-Em4dVvrXuGQCBRNIw</guid>
+      <title>Coming Soon: “The Daily”</title>
+      <description><![CDATA[<p>This is how the news should sound. Fifteen minutes a day. Five days a week. Hosted by Michael Barbaro. Powered by New York Times journalism. Starting Feb. 1.</p>
+]]></description>
+      <pubDate>Tue, 17 Jan 2017 21:19:47 +0000</pubDate>
+      <author>thedaily@nytimes.com (The New York Times)</author>
+      <link>https://www.nytimes.com/the-daily</link>
+      <content:encoded><![CDATA[<p>This is how the news should sound. Fifteen minutes a day. Five days a week. Hosted by Michael Barbaro. Powered by New York Times journalism. Starting Feb. 1.</p>
+]]></content:encoded>
+      <enclosure length="3345832" type="audio/mpeg" url="https://dts.podtrac.com/redirect.mp3/chrt.fm/track/8DB4DB/pdst.fm/e/nyt.simplecastaudio.com/03d8b493-87fc-4bd1-931f-8a8e9b945d8a/episodes/0a40772a-b965-4e60-9673-85f0613a5e58/audio/128/default.mp3?aid=rss_feed&amp;awCollectionId=03d8b493-87fc-4bd1-931f-8a8e9b945d8a&amp;awEpisodeId=0a40772a-b965-4e60-9673-85f0613a5e58&amp;feed=54nAGcIl"/>
+      <itunes:title>Coming Soon: “The Daily”</itunes:title>
+      <itunes:author>The New York Times</itunes:author>
+      <itunes:image href="https://image.simplecastcdn.com/images/03d8b4/03d8b493-87fc-4bd1-931f-8a8e9b945d8a/0a40772a-b965-4e60-9673-85f0613a5e58/3000x3000/c81936f538106550b804e7e4fe2c236319bab7fba37941a6e8f7e5c3d3048b88fc5b2182fb790f7d446bdc820406456c94287f245db89d8656c105d5511ec3de.jpeg?aid=rss_feed"/>
+      <itunes:duration>00:03:10</itunes:duration>
+      <itunes:summary>This is how the news should sound. Fifteen minutes a day. Five days a week. Hosted by Michael Barbaro. Powered by New York Times journalism. Starting Feb. 1.</itunes:summary>
+      <itunes:subtitle>This is how the news should sound. Fifteen minutes a day. Five days a week. Hosted by Michael Barbaro. Powered by New York Times journalism. Starting Feb. 1.</itunes:subtitle>
+      <itunes:explicit>no</itunes:explicit>
+      <itunes:episodeType>full</itunes:episodeType>
+    </item>
+  </channel>
+</rss>
