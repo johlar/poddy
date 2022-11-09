@@ -15,6 +15,10 @@ const fileExtension = (url: string): string => {
     const split = name.split('.');
     return split[split.length - 1];
 }
+interface IDownloadReportItem {
+    episode: IEpisode,
+    resolvedTasks: Set<"enclosure" | "shownotes">
+}
 
 const getOrInitMetadata = async (directory: string): Promise<Metadata> => {
     const metadataPath = path.resolve(directory, "poddy.meta");
@@ -120,18 +124,19 @@ const downloadEpisodes = async (
     includeShownotes: boolean,
     signal: AbortSignal,
     onProgress?: (bytesNow: number, bytesTotal: number, episode: IEpisode) => void,
-): Promise<void> => {
+): Promise<Array<IDownloadReportItem>> => {
     const channelDirectory = path.resolve(rootDirectory, channel.title);
     const shownotesDirectory = path.join(channelDirectory + "/shownotes");
     // create folders if required
     await fsAsync.mkdir(channelDirectory, { recursive: true })
     includeShownotes && await fsAsync.mkdir(shownotesDirectory, { recursive: true })
-    
+
     let metadata = await getOrInitMetadata(channelDirectory);
 
     const toDownload = channel.episodes
-        .slice(firstEpisodeNbr - 1, lastEpisodeNbr)
+        .slice(firstEpisodeNbr - 1, lastEpisodeNbr);
 
+    const downloadReport: Array<IDownloadReportItem> = [];
     for (let i = 0; i < toDownload.length && !signal.aborted; i++) {
         const episode = toDownload[i];
         const tasks: Array<({ what: "enclosure" | "shownotes", func: () => Promise<void> })> = [];
@@ -161,7 +166,7 @@ const downloadEpisodes = async (
                         }
                     })
                 });
-
+            downloadReport.push({ episode, resolvedTasks });
             const resolvedTasksMsg = resolvedTasks.size == 0 ? "" : `(${[...resolvedTasks].join(", ")})`;
             const errorMsg = errors.size == 0 ? "" : `(${[...errors].map(e => `${e[0]}: ${e[1]}`).join(", ")})`;
             console.log(`Finished: ${episode.title} ${resolvedTasksMsg} ${errorMsg}`);
@@ -169,6 +174,7 @@ const downloadEpisodes = async (
             await persistMetadata(metadata, channelDirectory);
         }
     }
+    return downloadReport;
 }
 
-export { downloadEpisodes };
+export { downloadEpisodes, IDownloadReportItem };

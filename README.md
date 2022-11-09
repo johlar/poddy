@@ -1,3 +1,6 @@
+![Poddy Logo](logo.png "Poddy")<br/>
+![vulnerabilities](https://img.shields.io/snyk/vulnerabilities/github/johlar/poddy)
+![license](https://img.shields.io/github/license/johlar/poddy)
 # Poddy - CLI Podcast Downloader
 
 **NOTE! Poddy is still in BETA. Semantic versioning is not enforced and non-backwards compatible changes may be released at any time.** 

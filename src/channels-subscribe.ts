@@ -5,7 +5,7 @@ const DOWNLOAD_QUEUE_CHECK_INTERVAL = 500;
 const MAX_PARALLELL_DOWNLOADS = 5;
 
 interface ISubscription { url: string, interval: number, includeShownotes: boolean }
-interface IDownloadQueueItem { id: string, task: () => Promise<void> }
+interface IDownloadQueueItem { id: string, task: () => Promise<any> }
 interface IActiveDownloadItem { id: string, task: Promise<any> }
 
 const queueChannelCheck = async (

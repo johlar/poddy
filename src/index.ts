@@ -1,6 +1,6 @@
 import { Command, InvalidArgumentError } from 'commander';
 import { searchChannels } from "./channel-search";
-import { downloadEpisodes } from "./episode-download";
+import { downloadEpisodes, IDownloadReportItem } from "./episode-download";
 import { getChannel } from "./channel-get";
 import { IEpisode, IChannelSearchResult } from "./models"
 import * as fs from 'fs';
@@ -149,7 +149,6 @@ program.command('download')
         try {
             if (!options.episodes) {
                 currentTask = downloadEpisodes(channel, 1, channel.episodes.length + 1, directory, includeShownotes, abortController.signal, printProgress);
-                await currentTask;
             } else {
                 const isTakeLatest = options.episodes.to == undefined;
 
@@ -161,8 +160,11 @@ program.command('download')
                     : options.episodes.to;
 
                 currentTask = downloadEpisodes(channel, firstEpisodeNbr, lastEpisodeNbr, directory, includeShownotes, abortController.signal, printProgress);
-                await currentTask;
             }
+            const report = await currentTask;
+            const nbrOfEnclosures = report.filter((r: IDownloadReportItem) => r.resolvedTasks.has("enclosure")).length;
+            const nbrOfShownotes = report.filter((r: IDownloadReportItem) => r.resolvedTasks.has("shownotes")).length;
+            console.log(`Done downloading from ${report.length} episodes. ${nbrOfEnclosures} enclosures and ${nbrOfShownotes} shownotes`);
         } catch (err: any) {
             console.error("ERROR: " + err?.message);
         }
