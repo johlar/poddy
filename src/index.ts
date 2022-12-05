@@ -65,6 +65,23 @@ const parseUrl = (url: string) => {
     }
 }
 
+const parseSearchEngine = (name: string) => {
+    var normalized = name.toLowerCase()
+    if (normalized === "itunes") 
+        return "iTunes"
+    if(normalized == "podcastindex")
+        return "PodcastIndex"
+    throw new InvalidArgumentError("Unkown search engine")
+}
+
+const parseSearchEngineOptions = (obj: any) => {
+    try {
+        return JSON.parse(obj);
+    } catch (err) {
+        throw new InvalidArgumentError(`Search engine options is not valid JSON. ${err}`)
+    }
+}
+
 const parseUrls = (url: string, previous: Array<string>): Array<string> => {
     parseUrl(url);
     if (previous.includes(url)) {
@@ -98,9 +115,13 @@ program
 program.command('search')
     .description('find feed url')
     .requiredOption('-n, --name <name>', 'name of podcast')
+    .option('-s, --search-engine <name>', 'search engine to use', parseSearchEngine)
+    .option('-o, --search-engine-options <object>', 'search engine options to use', parseSearchEngineOptions)
     .action(async (options) => {
         try {
-            const channels = await searchChannels(options.name);
+            const searchEngine = options.searchEngine ?? configs.config.searchEngine
+            const searchEngineOptions = options.searchEngineOptions ?? configs.config.searchEngineOptions
+            const channels = await searchChannels(options.name, searchEngine, searchEngineOptions);
 
             channels.forEach(channel => {
                 console.log(channel.name)
@@ -211,3 +232,5 @@ process.on("SIGINT", async () => {
     await currentTask;
     process.exit();
 })
+
+export { program }

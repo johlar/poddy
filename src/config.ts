@@ -4,6 +4,8 @@ import * as path from "path";
 interface IConfig {
     downloadDirectory?: string,
     includeShownotes?: boolean,
+    searchEngine?: "iTunes" | "PodcastIndex"
+    searchEngineOptions?: any
 }
 
 interface ISubscriptionConfig {
@@ -16,7 +18,14 @@ interface ISubscriptionConfig {
 
 const initialConfig: IConfig = {
     downloadDirectory: path.resolve(process.env.HOME + "/Podcasts"),
-    includeShownotes: true
+    includeShownotes: true,
+    searchEngine: "iTunes",
+    searchEngineOptions: {
+        PodcastIndex: {
+            apiKey: "",
+            apiSecret: ""
+        }
+    }
 };
 
 const initialSubscriptions: ISubscriptionConfig = {

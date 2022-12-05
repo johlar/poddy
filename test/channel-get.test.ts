@@ -2,7 +2,7 @@ import { getChannel } from "../src/channel-get";
 import { describe, it } from "mocha";
 import chai, { expect } from "chai";
 import chaiDateTime from "chai-datetime";
-import sinon from "sinon";
+import sinon, { SinonSandbox } from "sinon";
 import axios from "axios";
 import { IChannel } from "../src/models";
 import * as fs from "fs";
@@ -120,17 +120,31 @@ interface TestCase {
     expected: IChannel
 }
 
-describe('getChannel', () => {
-    const stub = sinon.stub(axios, "get");
+describe('Get Channel', () => {
+    let axiosStub: any;
+    let sandbox: SinonSandbox;
+
+    beforeEach(() => {
+        sandbox = sinon.createSandbox();
+    });
 
     for (let i = 0; i < testCases.length; i++) {
         const thisTest = testCases[i];
 
         it(`Should parse feed: '${thisTest.description}'`, async () => {
-            stub.withArgs("_").returns(Promise.resolve({ data: thisTest.xml }));
+            givenHttpCallReturns({ data: thisTest.xml })
 
             const actual = await getChannel("_")
+
             expect(actual).to.deep.equal(thisTest.expected);
         });
+    }
+
+    afterEach(() => {
+        sandbox.restore()
+    })
+
+    const givenHttpCallReturns = (result: any) => {
+        axiosStub = sandbox.stub(axios, "get").callsFake(() => Promise.resolve(result))
     }
 });
